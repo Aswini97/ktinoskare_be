@@ -1,10 +1,10 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from .models import Alert
+from .serializers import AlertSerializer
 
-from alerts.models import Device
-from alerts.serializers import DeviceSerializer
 
 # Create your views here.
 
-class DeviceViewSet(viewsets.ModelViewSet):
-    queryset = Device.objects.all()
-    serializer_class = DeviceSerializer
+class AlertViewSet(viewsets.ModelViewSet):
+    queryset = Alert.objects.all()
+    serializer_class = AlertSerializer

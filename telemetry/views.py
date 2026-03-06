@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from .models import TelemetryRecord
+from .serializers import TelemetryRecordSerializer
 
-# Create your views here.
+
+class TelemetryRecordViewSet(viewsets.ModelViewSet):
+    queryset = TelemetryRecord.objects.all()
+    serializer_class = TelemetryRecordSerializer
