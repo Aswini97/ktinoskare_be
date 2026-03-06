@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'rest_framework',
+    'drf_spectacular',
 
     'devices',
     'accounts',
@@ -134,3 +135,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTULAR_SETTINGS = {
+    'TITLE': 'Ktinoscare API',
+    'DESCRIPTION': 'API documentation for Ktinoscare pet monitoring system',
+    'VERSION': '1.0.0',
+}
