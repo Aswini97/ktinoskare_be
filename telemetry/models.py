@@ -9,7 +9,7 @@ class TelemetryRecord(models.Model):
     temperature = models.FloatField(null=True, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
-    motion = models.IntegerField(null=True, blank=True)
+    motion = models.BooleanField(null=True, default=False)
     battery_level = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
