@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=cattle_db
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=your_secure_password
+
+  mqtt:
+    image: eclipse-mosquitto:latest
+    restart: always
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+
+  web:
+    build: .
+    restart: always
+    # Django runserver has auto-reload enabled by default
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000" # Use 8000 for local dev to avoid conflict with system port 80
+    depends_on:
+      - db
+      - mqtt
+    environment:
+      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - PYTHONDONTWRITEBYTECODE=1 # Prevents .pyc files in your Windows folder
+      - PYTHONUNBUFFERED=1       # Ensures logs show up in your terminal immediately
+      - CHOKIDAR_USEPOLLING=true 
+      - WATCHPACK_POLLING=true
+
+volumes:
+  postgres_data:
+  mosquitto_data:

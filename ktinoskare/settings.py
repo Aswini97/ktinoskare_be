@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-1pzapbzmbc9pu3b23=_py)n&&atlo9m35m0^ccxp_46am(%kik
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -37,7 +39,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    'rest_framework',
+    'drf_spectacular',
+
     'devices',
+    'accounts',
+    'pets',
+    'telemetry',
+    'alerts',
 ]
 
 MIDDLEWARE = [
@@ -81,14 +91,9 @@ WSGI_APPLICATION = 'ktinoskare.wsgi.application'
 # }
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ktinoskare',
-        'USER': 'postgres',
-        'PASSWORD': '3214',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL', 'postgres://admin:your_secure_password@db:5432/cattle_db')
+    )
 }
 
 
@@ -127,3 +132,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTULAR_SETTINGS = {
+    'TITLE': 'Ktinoscare API',
+    'DESCRIPTION': 'API documentation for Ktinoscare pet monitoring system',
+    'VERSION': '1.0.0',
+}
