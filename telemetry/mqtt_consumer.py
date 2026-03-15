@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ktinoskare.settings")
 django.setup()
 
-from telemetry.models import Telemetry # Adjust based on your actual model name
+from telemetry.models import TelemetryRecord # Adjust based on your actual model name
 
 # Change "localhost" to "mqtt" because inside Docker, 
 # services talk to each other by their names in docker-compose.yml
@@ -27,7 +27,7 @@ def on_message(client, userdata, msg):
         print(f"Received data from {payload.get('device_id')}")
 
         # Use .create() to save to Postgres
-        Telemetry.objects.create(
+        TelemetryRecord.objects.create(
             device_id=payload["device_id"],
             temperature=payload["temperature"],
             heart_rate=payload["heart_rate"],
