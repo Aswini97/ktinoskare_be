@@ -18,24 +18,37 @@ services:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
 
+  mqtt_worker:
+    build: .
+    # Add volume so live-reload/code updates work here too
+    volumes:
+      - .:/app
+    command: python telemetry/mqtt_consumer.py
+    restart: always
+    depends_on:
+      - db
+      - mqtt
+    environment:
+      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - PYTHONUNBUFFERED=1 # Crucial for seeing MQTT logs in 'docker logs'
+
   web:
     build: .
     restart: always
-    # Django runserver has auto-reload enabled by default
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:
-      - "8000:8000" # Use 8000 for local dev to avoid conflict with system port 80
+      - "80:8000" # Changed to 80 for easier access on AWS
     depends_on:
       - db
       - mqtt
     environment:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
-      - PYTHONDONTWRITEBYTECODE=1 # Prevents .pyc files in your Windows folder
-      - PYTHONUNBUFFERED=1       # Ensures logs show up in your terminal immediately
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
       - CHOKIDAR_USEPOLLING=true 
       - WATCHPACK_POLLING=true
 
