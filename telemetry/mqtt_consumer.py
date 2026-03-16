@@ -24,11 +24,11 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
-        print(f"Received data from {payload.get('device_id')}")
+        print(f"Received data from {payload.get('device_uid')}")
 
         # Use .create() to save to Postgres
         TelemetryRecord.objects.create(
-            device_id=payload["device_id"],
+            device_uid=payload["device_uid"],
             temperature=payload["temperature"],
             heart_rate=payload["heart_rate"],
         )
