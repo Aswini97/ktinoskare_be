@@ -31,8 +31,6 @@ def on_message(client, userdata, msg):
             device_id=payload["device_id"],
             temperature=payload["temperature"],
             heart_rate=payload["heart_rate"],
-            # If timestamp is not in payload, Django auto_now_add will handle it
-            timestamp=payload.get("timestamp") 
         )
     except Exception as e:
         print(f"Error processing message: {e}")
