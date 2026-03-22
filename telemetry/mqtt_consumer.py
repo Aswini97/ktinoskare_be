@@ -20,27 +20,26 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     try:
-        payload = json.loads(msg.payload.decode())
-        print(f"Received telemetry from {payload.get('device_uid')}")
+        data = msg.payload.decode().split(",")
+        print(f"Received telemetry from {data[0]}")
 
-        # Find the device
-        device = Device.objects.get(device_uid=payload["device_uid"])
+        device = Device.objects.get(device_uid=data[0])
 
         TelemetryRecord.objects.create(
             device=device,
-            heart_rate=payload.get("heart_rate"),
-            spo2=payload.get("spo2"),
-            ambient_temperature=payload.get("ambient_temperature"),
-            object_temperature=payload.get("object_temperature"),
-            accel_x=payload.get("accel_x"),
-            accel_y=payload.get("accel_y"),
-            accel_z=payload.get("accel_z"),
-            motion_detected=payload.get("motion_detected", False),
-            light_level=payload.get("light_level"),
-            battery_voltage=payload.get("battery_voltage"),
-            battery_percentage=payload.get("battery_percentage"),
-            latitude=payload.get("latitude"),
-            longitude=payload.get("longitude"),
+            heart_rate=float(data[1]),
+            spo2=float(data[2]),
+            ambient_temperature=float(data[3]),
+            object_temperature=float(data[4]),
+            accel_x=float(data[5]),
+            accel_y=float(data[6]),
+            accel_z=float(data[7]),
+            motion_detected=(data[8] == "1"),
+            light_level=float(data[9]),
+            battery_voltage=float(data[10]),
+            battery_percentage=int(data[11]),
+            latitude=float(data[12]),
+            longitude=float(data[13]),
         )
     except Exception as e:
         print(f"Error processing message: {e}")
