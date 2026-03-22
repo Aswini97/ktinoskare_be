@@ -5,4 +5,4 @@ from .models import TelemetryRecord
 class TelemetryRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelemetryRecord
-        fields = '__all__'
+        fields = "__all__"

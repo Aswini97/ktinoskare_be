@@ -16,9 +16,9 @@ class PetBread(models.Model):
         return self.name
 
 class Pet(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
+    ownerId = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
     name = models.CharField(max_length=100)
-    breed = models.ForeignKey(PetBread, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
+    breedId = models.ForeignKey(PetBread, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
     gender = models.CharField(max_length=10, blank=True)
     dob = models.DateField(null=True, blank=True)
     weight = models.FloatField(null=True, blank=True)
