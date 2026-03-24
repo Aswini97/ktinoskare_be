@@ -20,10 +20,38 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     try:
-        data = msg.payload.decode().split(",")
-        print(f"Received telemetry from {data[0]}")
+        # 1. Print EXACTLY what is coming from the MQTT Broker
+        raw_payload = msg.payload.decode().strip()
+        print(f"\n--- INCOMING TELEMETRY ---")
+        print(f"RAW: {raw_payload}")
 
-        device = Device.objects.get(device_uid=data[0])
+        # 2. Split the CSV string
+        data = raw_payload.split(",")
+        
+        # Guard against short messages or empty data
+        if len(data) < 14:
+            print(f"⚠️ Warning: Incomplete data packet (Length: {len(data)})")
+            return
+
+        device_uid = data[0].strip()
+        
+        # 3. Convert GPS fields specifically
+        # .strip() is crucial to remove any hidden \r or \n from the end of the string
+        lat_raw = data[12].strip()
+        lon_raw = data[13].strip()
+        
+        lat = float(lat_raw)
+        lon = float(lon_raw)
+
+        print(f"DEBUG -> Lat: {lat} | Lon: {lon}")
+
+        # 4. Filter out zeros (Don't save if GPS hasn't fixed yet)
+        if lat == 0.0 or lon == 0.0:
+            print("❌ Skipping DB Save: GPS fix not yet acquired.")
+            return
+
+        # 5. Save to Django Database
+        device = Device.objects.get(device_uid=device_uid)
 
         TelemetryRecord.objects.create(
             device=device,
@@ -38,11 +66,13 @@ def on_message(client, userdata, msg):
             light_level=float(data[9]),
             battery_voltage=float(data[10]),
             battery_percentage=int(data[11]),
-            latitude=float(data[12]),
-            longitude=float(data[13]),
+            latitude=lat,
+            longitude=lon,
         )
+        print(f"✅ SUCCESS: Record saved for {device_uid}")
+
     except Exception as e:
-        print(f"Error processing message: {e}")
+        print(f"🔥 Error processing message: {e}")
 
 client = mqtt.Client()
 client.on_connect = on_connect

@@ -21,3 +21,9 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy project
 COPY . /app/
+
+# 1. Wait for the 'db' host to be available on port 5432
+# 2. Create new migration files based on model changes
+# 3. Apply migrations to the database
+# 4. Start the Django development server
+CMD ["sh", "-c", "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done; python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
