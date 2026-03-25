@@ -135,6 +135,8 @@ STATIC_URL = 'static/'
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 50,
 }
 
 SPECTULAR_SETTINGS = {
@@ -142,3 +144,5 @@ SPECTULAR_SETTINGS = {
     'DESCRIPTION': 'API documentation for Ktinoscare pet monitoring system',
     'VERSION': '1.0.0',
 }
+
+ASGI_APPLICATION = "ktinoskare.asgi.application"
