@@ -22,8 +22,8 @@ class TelemetryRecord(models.Model):
     battery_voltage = models.FloatField(null=True, blank=True)
     battery_percentage = models.IntegerField(null=True, blank=True)
 
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
+    latitude = models.CharField(max_length=25, default="0.0")
+    longitude = models.CharField(max_length=25, default="0.0")
 
     created_at = models.DateTimeField(auto_now_add=True)
 

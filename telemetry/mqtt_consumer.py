@@ -57,8 +57,6 @@ def on_message(client, userdata, msg):
 
         TelemetryRecord.objects.create(
             device=device,
-            # using Django's timezone.now() for the DB record itself
-            created_at=timezone.now(), 
             heart_rate=float(data[1]),
             spo2=float(data[2]),
             ambient_temperature=float(data[3]),
