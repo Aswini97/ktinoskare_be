@@ -24,15 +24,24 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
 
         # Handle initial request with device_uid
         if "device_uid" in data:
+            device_uid = data["device_uid"]
+            self.group_name = f"device_{device_uid}" # Match the name in mqtt_consumer.py
+
+            # ✅ CRITICAL: Join the group so you can hear the MQTT broadcasts
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name
+            )
+            
+            print(f"📡 Socket joined group: {self.group_name}")
+            
             try:
                 from devices.models import Device
                 self.device = await asyncio.to_thread(
-                    Device.objects.get, device_uid=data["device_uid"]
+                    Device.objects.get, device_uid=device_uid
                 )
-                print(f"📡 Device {self.device.device_uid} attached to socket")
             except Exception:
                 await self.send(json.dumps({"error": "Device not found"}))
-                return
 
         # Handle interval update
         if "interval" in data:
