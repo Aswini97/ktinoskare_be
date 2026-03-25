@@ -9,7 +9,6 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libpq-dev \
-    gcc \
     netcat-traditional \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
