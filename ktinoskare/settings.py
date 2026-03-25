@@ -147,3 +147,12 @@ SPECTULAR_SETTINGS = {
 }
 
 ASGI_APPLICATION = "ktinoskare.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}

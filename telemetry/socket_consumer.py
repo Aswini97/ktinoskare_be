@@ -1,4 +1,3 @@
-# telemetry/consumers.py
 import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -23,13 +22,12 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
 
-        # Handle initial request with collar_id
-        if "collar_id" in data:
+        # Handle initial request with device_uid
+        if "device_uid" in data:
             try:
-                # Import models only when needed
                 from devices.models import Device
                 self.device = await asyncio.to_thread(
-                    Device.objects.get, device_uid=data["collar_id"]
+                    Device.objects.get, device_uid=data["device_uid"]
                 )
                 print(f"📡 Device {self.device.device_uid} attached to socket")
             except Exception:
@@ -65,12 +63,23 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
                         ).order_by("-created_at").first()
                     )
                     if latest:
-                        # Avoid sending raw __dict__ (contains internal fields)
                         payload = {
                             "id": latest.id,
                             "device_id": latest.device_id,
                             "created_at": str(latest.created_at),
-                            "data": getattr(latest, "data", None),
+                            "heart_rate": getattr(latest, "heart_rate", None),
+                            "spo2": getattr(latest, "spo2", None),
+                            "ambient_temperature": getattr(latest, "ambient_temperature", None),
+                            "object_temperature": getattr(latest, "object_temperature", None),
+                            "accel_x": getattr(latest, "accel_x", None),
+                            "accel_y": getattr(latest, "accel_y", None),
+                            "accel_z": getattr(latest, "accel_z", None),
+                            "motion_detected": getattr(latest, "motion_detected", None),
+                            "light_level": getattr(latest, "light_level", None),
+                            "battery_voltage": getattr(latest, "battery_voltage", None),
+                            "battery_percentage": getattr(latest, "battery_percentage", None),
+                            "latitude": getattr(latest, "latitude", None),
+                            "longitude": getattr(latest, "longitude", None),
                         }
                         await self.send(json.dumps({"telemetry": payload}))
                 # Heartbeat
@@ -78,3 +87,7 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
                 await asyncio.sleep(self.interval)
         except asyncio.CancelledError:
             pass
+
+    # Handler for telemetry messages pushed into the group by mqtt_consumer
+    async def telemetry_message(self, event):
+        await self.send(json.dumps({"telemetry": event["data"]}))
