@@ -3,6 +3,8 @@ import sys
 import json
 import paho.mqtt.client as mqtt
 import django
+from datetime import datetime # --- Added for Printing ---
+from django.utils import timezone # --- Added for DB Accuracy ---
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ktinoskare.settings")
@@ -20,15 +22,16 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     try:
-        # 1. Print EXACTLY what is coming from the MQTT Broker
+        # 1. Capture and Print EXACTLY when the data hits the script
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         raw_payload = msg.payload.decode().strip()
-        print(f"\n--- INCOMING TELEMETRY ---")
+        
+        print(f"\n--- INCOMING TELEMETRY [{now}] ---")
         print(f"RAW: {raw_payload}")
 
         # 2. Split the CSV string
         data = raw_payload.split(",")
         
-        # Guard against short messages or empty data
         if len(data) < 14:
             print(f"⚠️ Warning: Incomplete data packet (Length: {len(data)})")
             return
@@ -36,7 +39,6 @@ def on_message(client, userdata, msg):
         device_uid = data[0].strip()
         
         # 3. Convert GPS fields specifically
-        # .strip() is crucial to remove any hidden \r or \n from the end of the string
         lat_raw = data[12].strip()
         lon_raw = data[13].strip()
         
@@ -45,7 +47,7 @@ def on_message(client, userdata, msg):
 
         print(f"DEBUG -> Lat: {lat} | Lon: {lon}")
 
-        # 4. Filter out zeros (Don't save if GPS hasn't fixed yet)
+        # 4. Filter out zeros
         if lat == 0.0 or lon == 0.0:
             print("❌ Skipping DB Save: GPS fix not yet acquired.")
             return
@@ -55,6 +57,8 @@ def on_message(client, userdata, msg):
 
         TelemetryRecord.objects.create(
             device=device,
+            # using Django's timezone.now() for the DB record itself
+            created_at=timezone.now(), 
             heart_rate=float(data[1]),
             spo2=float(data[2]),
             ambient_temperature=float(data[3]),
@@ -78,5 +82,6 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
+print(f"Subscriber started. Listening on {BROKER}...")
 client.connect(BROKER, PORT, 60)
 client.loop_forever()
