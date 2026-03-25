@@ -3,9 +3,30 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework.pagination import PageNumberPagination
 
 from .models import TelemetryRecord, Device
 from .serializers import TelemetryRecordSerializer
+
+
+class TelemetryPagination(PageNumberPagination):
+    # Default page size
+    page_size = 10
+    # Allow client to override with ?page_size=
+    page_size_query_param = "page_size"
+    # Optional: cap the maximum page size
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response({
+            "count": self.page.paginator.count,
+            "page": self.page.number,
+            "page_size": self.get_page_size(self.request),
+            "total_pages": self.page.paginator.num_pages,
+            "next": self.get_next_link(),
+            "previous": self.get_previous_link(),
+            "telemetry_records": data
+        })
 
 
 @extend_schema_view(
@@ -19,8 +40,9 @@ from .serializers import TelemetryRecordSerializer
 class TelemetryRecordViewSet(viewsets.ModelViewSet):
     queryset = TelemetryRecord.objects.all()
     serializer_class = TelemetryRecordSerializer
+    pagination_class = TelemetryPagination
 
-    # GET /api/v1/telemetry/<device_id>/?from=2026-03-01T00:00:00&to=2026-03-08T23:59:59&page=2&page_size=20
+    # GET /api/v1/telemetry/<device_id>/?from=...&to=...&page=...&page_size=...
     @action(detail=False, methods=["get"], url_path=r"(?P<device_id>\d+)")
     def by_device(self, request, device_id=None):
         try:
@@ -50,4 +72,4 @@ class TelemetryRecordViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(qs, many=True)
-        return Response(serializer.data)
+        return Response({"telemetry_records": serializer.data})
