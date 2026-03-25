@@ -11,11 +11,11 @@ DB_PORT = "5432"
 
 # KTINO devices (device_id must match your devices_device table)
 devices = {
-    1: ("KTINO_001", "12.9716", "77.5946"),  # Falcon
-    2: ("KTINO_002", "12.2958", "76.6394"),  # Wolf
-    3: ("KTINO_003", "11.0168", "76.9558"),  # Bear
-    4: ("KTINO_004", "13.0827", "80.2707"),  # Eagle
-    5: ("KTINO_005", "15.2993", "74.1240"),  # Fox
+    8: ("KTINO_001", "12.9716", "77.5946"),  # Falcon
+    9: ("KTINO_002", "12.2958", "76.6394"),  # Wolf
+    10: ("KTINO_003", "11.0168", "76.9558"),  # Bear
+    11: ("KTINO_004", "13.0827", "80.2707"),  # Eagle
+    12: ("KTINO_005", "15.2993", "74.1240"),  # Fox
 }
 
 def generate_records(device_id, lat, lon, start_id):
