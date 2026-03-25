@@ -11,7 +11,7 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
         self.interval = self.DEFAULT_INTERVAL
         self.task = None
         print("✅ WebSocket client connected")
-        await self.send(json.dumps({"status": "connected", "heartbeat": True}))
+        await self.send(json.dumps({"ok": True}))
 
     async def disconnect(self, close_code):
         if self.task:
@@ -22,9 +22,9 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
 
-        # Handle initial request with device_uid
-        if "device_uid" in data:
-            device_uid = data["device_uid"]
+        # Handle initial request with duid
+        if "duid" in data:
+            device_uid = data["duid"]
             self.group_name = f"device_{device_uid}" # Match the name in mqtt_consumer.py
 
             # ✅ CRITICAL: Join the group so you can hear the MQTT broadcasts
@@ -34,6 +34,9 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
             )
             
             print(f"📡 Socket joined group: {self.group_name}")
+            
+            # Send confirmation back to client
+            await self.send(json.dumps({"ok": True}))
             
             try:
                 from devices.models import Device
@@ -75,20 +78,20 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
                         payload = {
                             "id": latest.id,
                             "device_id": latest.device_id,
-                            "created_at": str(latest.created_at),
-                            "heart_rate": getattr(latest, "heart_rate", None),
+                            "ts": str(latest.created_at),
+                            "hr": getattr(latest, "heart_rate", None),
                             "spo2": getattr(latest, "spo2", None),
-                            "ambient_temperature": getattr(latest, "ambient_temperature", None),
-                            "object_temperature": getattr(latest, "object_temperature", None),
-                            "accel_x": getattr(latest, "accel_x", None),
-                            "accel_y": getattr(latest, "accel_y", None),
-                            "accel_z": getattr(latest, "accel_z", None),
-                            "motion_detected": getattr(latest, "motion_detected", None),
-                            "light_level": getattr(latest, "light_level", None),
-                            "battery_voltage": getattr(latest, "battery_voltage", None),
-                            "battery_percentage": getattr(latest, "battery_percentage", None),
-                            "latitude": getattr(latest, "latitude", None),
-                            "longitude": getattr(latest, "longitude", None),
+                            "amb_temp": getattr(latest, "ambient_temperature", None),
+                            "obj_temp": getattr(latest, "object_temperature", None),
+                            "ax": getattr(latest, "accel_x", None),
+                            "ay": getattr(latest, "accel_y", None),
+                            "az": getattr(latest, "accel_z", None),
+                            "motion": getattr(latest, "motion_detected", None),
+                            "light": getattr(latest, "light_level", None),
+                            "batt_v": getattr(latest, "battery_voltage", None),
+                            "batt_pct": getattr(latest, "battery_percentage", None),
+                            "lat": getattr(latest, "latitude", None),
+                            "long": getattr(latest, "longitude", None),
                         }
                         await self.send(json.dumps({"telemetry": payload}))
                 # Heartbeat

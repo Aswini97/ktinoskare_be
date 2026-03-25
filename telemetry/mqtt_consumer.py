@@ -77,29 +77,37 @@ def on_message(client, userdata, msg):
         print(f"✅ SUCCESS: Record saved for {device_uid}")
 
         # 6. Broadcast telemetry to WebSocket group
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"device_{device_uid}",
-            {
-                "type": "telemetry_message",
-                "data": {
-                    "device_uid": device_uid,
-                    "latitude": lat,
-                    "longitude": lon,
-                    "heart_rate": float(data[1]),
-                    "spo2": float(data[2]),
-                    "ambient_temperature": float(data[3]),
-                    "object_temperature": float(data[4]),
-                    "accel_x": float(data[5]),
-                    "accel_y": float(data[6]),
-                    "accel_z": float(data[7]),
-                    "motion_detected": (data[8] == "1"),
-                    "light_level": float(data[9]),
-                    "battery_voltage": float(data[10]),
-                    "battery_percentage": int(data[11]),
-                },
-            }
-        )
+        try:
+            channel_layer = get_channel_layer()
+            print(f"📡 Channel Layer: {channel_layer}")
+            group_name = f"device_{device_uid}"
+            print(f"📡 Broadcasting to group: {group_name}")
+            
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {
+                    "type": "telemetry_message",
+                    "data": {
+                        "duid": device_uid,
+                        "lat": lat,
+                        "long": lon,
+                        "hr": float(data[1]),
+                        "spo2": float(data[2]),
+                        "amb_temp": float(data[3]),
+                        "obj_temp": float(data[4]),
+                        "ax": float(data[5]),
+                        "ay": float(data[6]),
+                        "az": float(data[7]),
+                        "motion": (data[8] == "1"),
+                        "light": float(data[9]),
+                        "batt_v": float(data[10]),
+                        "batt_pct": int(data[11]),
+                    },
+                }
+            )
+            print(f"📡 Broadcast sent successfully to {group_name}")
+        except Exception as broadcast_error:
+            print(f"🔥 Broadcast Error: {broadcast_error}")
 
     except Exception as e:
         print(f"🔥 Error processing message: {e}")

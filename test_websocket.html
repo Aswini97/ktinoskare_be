@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Telemetry Test</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; }
+        #log { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; background: #f5f5f5; margin: 20px 0; }
+        .message { margin: 5px 0; padding: 5px; border-left: 3px solid #ddd; }
+        .success { border-left-color: green; background: #e8f5e9; }
+        .error { border-left-color: red; background: #ffebee; }
+        .info { border-left-color: blue; background: #e3f2fd; }
+        input, button { padding: 8px; margin: 5px; }
+        button { background: #2196F3; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #1976D2; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Telemetry Test</h1>
+    
+    <div>
+        <label>Device UID:</label>
+        <input type="text" id="deviceUid" value="KTINO_001" placeholder="e.g., KTINO_001">
+        <button onclick="connectWebSocket()">Connect</button>
+        <button onclick="disconnectWebSocket()">Disconnect</button>
+    </div>
+
+    <div id="log"></div>
+
+    <div>
+        <label>Device ID (for URL):</label>
+        <input type="text" id="deviceId" value="1" placeholder="e.g., 1">
+        <button onclick="connectWebSocket()">Reconnect with new ID</button>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            msg.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(msg);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type}] ${message}`);
+        }
+
+        function connectWebSocket() {
+            const deviceId = document.getElementById('deviceId').value || '1';
+            const deviceUid = document.getElementById('deviceUid').value || 'KTINO_001';
+
+            // Use port 80 (from docker-compose mapping 80:8000)
+            const wsUrl = `ws://localhost/ws/telemetry/${deviceId}/`;
+            log(`Connecting to ${wsUrl}`, 'info');
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                log('✅ WebSocket Connected!', 'success');
+                
+                // Send subscription message
+                const subscribeMsg = {
+                    device_uid: deviceUid
+                };
+                log(`Sending subscription: ${JSON.stringify(subscribeMsg)}`, 'info');
+                ws.send(JSON.stringify(subscribeMsg));
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    log(`📨 Received: ${JSON.stringify(data)}`, 'success');
+                } catch (e) {
+                    log(`📨 Raw: ${event.data}`, 'info');
+                }
+            };
+
+            ws.onerror = function(error) {
+                log(`🔥 WebSocket Error: ${error}`, 'error');
+            };
+
+            ws.onclose = function() {
+                log('❌ WebSocket Disconnected', 'error');
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                log('Disconnecting...', 'info');
+            }
+        }
+
+        // Try to connect on load
+        window.addEventListener('load', function() {
+            log('Page loaded. Enter Device ID and UID, then click Connect.', 'info');
+        });
+    </script>
+</body>
+</html>
