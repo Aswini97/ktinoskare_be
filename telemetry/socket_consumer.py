@@ -1,10 +1,7 @@
 # telemetry/consumers.py
 import json
 import asyncio
-from datetime import timedelta
-from django.utils import timezone
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import TelemetryRecord, Device
 
 class TelemetryConsumer(AsyncWebsocketConsumer):
     DEFAULT_INTERVAL = 30  # seconds
@@ -14,11 +11,13 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
         self.device = None
         self.interval = self.DEFAULT_INTERVAL
         self.task = None
+        print("✅ WebSocket client connected")
         await self.send(json.dumps({"status": "connected", "heartbeat": True}))
 
     async def disconnect(self, close_code):
         if self.task:
             self.task.cancel()
+        print("❌ WebSocket client disconnected")
         await self.send(json.dumps({"status": "terminated"}))
 
     async def receive(self, text_data):
@@ -27,23 +26,15 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
         # Handle initial request with collar_id
         if "collar_id" in data:
             try:
+                # Import models only when needed
+                from devices.models import Device
                 self.device = await asyncio.to_thread(
                     Device.objects.get, device_uid=data["collar_id"]
                 )
-            except Device.DoesNotExist:
+                print(f"📡 Device {self.device.device_uid} attached to socket")
+            except Exception:
                 await self.send(json.dumps({"error": "Device not found"}))
                 return
-
-            # # Send last 7 days of telemetry
-            # since = timezone.now() - timedelta(days=7)
-            # records = await asyncio.to_thread(
-            #     lambda: list(
-            #         TelemetryRecord.objects.filter(
-            #             device=self.device, created_at__gte=since
-            #         ).order_by("created_at").values()
-            #     )
-            # )
-            # await self.send(json.dumps({"last_7_days": records}))
 
         # Handle interval update
         if "interval" in data:
@@ -67,13 +58,21 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
         try:
             while True:
                 if self.device:
+                    from telemetry.models import TelemetryRecord
                     latest = await asyncio.to_thread(
                         lambda: TelemetryRecord.objects.filter(
                             device=self.device
                         ).order_by("-created_at").first()
                     )
                     if latest:
-                        await self.send(json.dumps({"telemetry": latest.__dict__}))
+                        # Avoid sending raw __dict__ (contains internal fields)
+                        payload = {
+                            "id": latest.id,
+                            "device_id": latest.device_id,
+                            "created_at": str(latest.created_at),
+                            "data": getattr(latest, "data", None),
+                        }
+                        await self.send(json.dumps({"telemetry": payload}))
                 # Heartbeat
                 await self.send(json.dumps({"heartbeat": True}))
                 await asyncio.sleep(self.interval)

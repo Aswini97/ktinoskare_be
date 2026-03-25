@@ -48,6 +48,7 @@ services:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
+      - DJANGO_SETTINGS_MODULE=ktinoskare.settings
 
   pgadmin:
     image: dpage/pgadmin4:latest
