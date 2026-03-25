@@ -63,6 +63,13 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  redis:
+    image: redis:6
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+
 volumes:
   postgres_data:
   mosquitto_data:
