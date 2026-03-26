@@ -16,13 +16,30 @@ class PetBread(models.Model):
         return self.name
 
 class Pet(models.Model):
+    HEALTH_STATUS_CHOICES = [
+        ('Healthy', 'Healthy'),
+        ('Sick', 'Sick'),
+        ('Under Treatment', 'Under Treatment'),
+        ('Recovering', 'Recovering'),
+    ]
+
     ownerId = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
     name = models.CharField(max_length=100)
     breedId = models.ForeignKey(PetBread, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
+    species = models.CharField(max_length=50, blank=True)
     gender = models.CharField(max_length=10, blank=True)
     dob = models.DateField(null=True, blank=True)
+    age = models.PositiveIntegerField(null=True, blank=True)
     weight = models.FloatField(null=True, blank=True)
+    color = models.CharField(max_length=100, blank=True)
+    vaccinated = models.BooleanField(default=False)
+    lastCheckup = models.DateField(null=True, blank=True)
+    nextCheckup = models.DateField(null=True, blank=True)
+    healthStatus = models.CharField(max_length=20, choices=HEALTH_STATUS_CHOICES, default='Healthy')
+    notes = models.TextField(blank=True)
+    avatar = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
