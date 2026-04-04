@@ -24,7 +24,7 @@ class Pet(models.Model):
         ('Recovering', 'Recovering'),
     ]
 
-    ownerId = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
     device = models.OneToOneField(Device, on_delete=models.SET_NULL, null=True, blank=True, related_name='pet')
     name = models.CharField(max_length=100)
     breedId = models.ForeignKey(PetBread, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
