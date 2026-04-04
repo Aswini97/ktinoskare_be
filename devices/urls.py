@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
-from .views import DeviceListView
+from .views import DeviceViewSet
 
 router = DefaultRouter()
-router.register('', DeviceListView, basename='devices')
+router.register('', DeviceViewSet, basename='devices')
 
 urlpatterns = router.urls

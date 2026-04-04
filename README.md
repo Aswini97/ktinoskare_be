@@ -636,3 +636,39 @@ ws.onmessage = function(event) {
 3. Filter by **WS** (WebSocket)
 4. Click on the WebSocket connection
 5. Go to **Messages** tab to see all sent/received messages
+
+### Generating Migrations
+
+To generate migrations for your Django application, use the following Docker command:
+
+```bash
+docker-compose run --rm web python manage.py makemigrations
+```
+
+This will create migration files for any changes made to your models.
+
+### Applying Migrations
+
+To apply the migrations and update the database schema, run:
+
+```bash
+docker-compose run --rm web python manage.py migrate
+```
+
+### Running the Application
+
+To start the application and all required services, use:
+
+```bash
+docker-compose up -d
+```
+
+This will start the Django application, MQTT broker, Redis, and other services in detached mode.
+
+### Running All Services Together
+
+To ensure all services are running and healthy, verify with:
+
+```bash
+docker-compose ps
+```

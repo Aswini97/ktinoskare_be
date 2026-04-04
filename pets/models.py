@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from devices.models import Device
 # Create your models here.
 
 class PetCategory(models.Model):
@@ -24,6 +25,7 @@ class Pet(models.Model):
     ]
 
     ownerId = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
+    device = models.OneToOneField(Device, on_delete=models.SET_NULL, null=True, blank=True, related_name='pet')
     name = models.CharField(max_length=100)
     breedId = models.ForeignKey(PetBread, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
     species = models.CharField(max_length=50, blank=True)
