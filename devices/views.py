@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from .models import Device
@@ -55,3 +55,15 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save()
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Overridden to return a custom success response (200 OK) instead of 204 No Content.
+        """
+        instance = self.get_object()
+        device_uid = instance.device_uid
+        self.perform_destroy(instance)
+        return Response({
+            "status": "success",
+            "message": f"Device {device_uid} has been deleted successfully."
+        }, status=status.HTTP_200_OK)
