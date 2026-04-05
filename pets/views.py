@@ -6,25 +6,49 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 @extend_schema_view(
     list=extend_schema(
         tags=["Pets"], 
-        description="Retrieve pets. Use ?owner_id=X to filter.",
-        parameters=[OpenApiParameter("owner_id", type=int)]
+        description="REQUIRED: ?owner_id=X to see your pets.",
+        parameters=[OpenApiParameter("owner_id", type=int, required=True)]
     ),
-    retrieve=extend_schema(tags=["Pets"], description="Retrieve details of a specific pet."),
-    create=extend_schema(tags=["Pets"], description="Create a new pet. You must pass 'owner' ID in the body."),
-    update=extend_schema(tags=["Pets"], description="Update a pet record."),
-    destroy=extend_schema(tags=["Pets"], description="Remove a pet record.")
+    retrieve=extend_schema(
+        tags=["Pets"], 
+        description="REQUIRED: ?owner_id=X in URL to retrieve.",
+        parameters=[OpenApiParameter("owner_id", type=int, required=True)]
+    ),
+    update=extend_schema(
+        tags=["Pets"], 
+        description="REQUIRED: ?owner_id=X in URL to update.",
+        parameters=[OpenApiParameter("owner_id", type=int, required=True)]
+    ),
+    partial_update=extend_schema(
+        tags=["Pets"], 
+        description="REQUIRED: ?owner_id=X in URL to partially update.",
+        parameters=[OpenApiParameter("owner_id", type=int, required=True)]
+    ),
+    destroy=extend_schema(
+        tags=["Pets"], 
+        description="REQUIRED: ?owner_id=X in URL to delete.",
+        parameters=[OpenApiParameter("owner_id", type=int, required=True)]
+    ),
+    create=extend_schema(tags=["Pets"], description="Create a pet record manually.")
 )
 class PetViewSet(viewsets.ModelViewSet):
     serializer_class = PetSerializer
-    permission_classes = [permissions.AllowAny] # No Auth
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """
-        Filters the list of pets based on the 'owner_id' query parameter.
+        MANDATORY FILTER: Requires 'owner_id' query parameter for ALL actions.
         """
-        queryset = Pet.objects.all().select_related('device', 'breedId') # Matches your model
         owner_id = self.request.query_params.get('owner_id')
         
-        if owner_id:
-            return queryset.filter(owner=owner_id) # Matches 'owner' field
-        return queryset
+        if not owner_id:
+            return Pet.objects.none()
+            
+        # Matches 'owner' field in your Pet model
+        return Pet.objects.filter(owner=owner_id).select_related('device', 'breedId')
+
+    def perform_create(self, serializer):
+        """
+        The owner ID must be provided in the JSON body since auth is disabled.
+        """
+        serializer.save()
