@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Pet
+from .models import *
 
 class PetSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.username')
@@ -13,3 +13,16 @@ class PetSerializer(serializers.ModelSerializer):
             'weight', 'color', 'healthStatus', 'avatar', 
             'vaccinated', 'lastCheckup', 'nextCheckup', 'notes'
         ]
+
+class PetCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PetCategory
+        fields = '__all__'
+
+class PetBreadSerializer(serializers.ModelSerializer):
+    # Added to show the category name in the response for better UI display
+    category_name = serializers.ReadOnlyField(source='category.name')
+
+    class Meta:
+        model = PetBread
+        fields = ['id', 'name', 'category', 'category_name']
