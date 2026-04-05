@@ -7,12 +7,7 @@ class PetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pet
-        fields = [
-            'id', 'name', 'owner', 'device', 'device_uid', 
-            'breed', 'species', 'gender', 'dob', 'age', 
-            'weight', 'color', 'healthStatus', 'avatar', 
-            'vaccinated', 'lastCheckup', 'nextCheckup', 'notes'
-        ]
+        fields = '__all__'
 
 class PetCategorySerializer(serializers.ModelSerializer):
     class Meta:
