@@ -1,11 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PetViewSet, PetCategoryViewSet, PetBreadViewSet
+from .views import PetViewSet, SpeciesViewSet, PetBreadViewSet
 
 router = DefaultRouter()
 
 # Master Data endpoints (order matters for the router)
-router.register('categories', PetCategoryViewSet, basename='pet-categories')
+router.register('species', SpeciesViewSet, basename='pet-species')
 router.register('breeds', PetBreadViewSet, basename='pet-breeds')
 
 # Main Pet Records

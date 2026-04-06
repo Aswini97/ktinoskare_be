@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from devices.models import Device
 # Create your models here.
 
-class PetCategory(models.Model):
+class Species(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -11,7 +11,7 @@ class PetCategory(models.Model):
     
 class PetBread(models.Model):
     name = models.CharField(max_length=100)
-    category = models.ForeignKey(PetCategory, on_delete=models.CASCADE, related_name='breeds')
+    category = models.ForeignKey(Species, on_delete=models.CASCADE, related_name='breeds')
 
     def __str__(self):
         return self.name

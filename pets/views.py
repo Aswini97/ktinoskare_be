@@ -63,12 +63,12 @@ class PetViewSet(viewsets.ModelViewSet):
     partial_update=extend_schema(tags=["Pet Categories"]),
     destroy=extend_schema(tags=["Pet Categories"]),
 )
-class PetCategoryViewSet(viewsets.ModelViewSet):
+class SpeciesViewSet(viewsets.ModelViewSet):
     """
     CRUD for Pet Categories.
     """
-    queryset = PetCategory.objects.all().order_by('name')
-    serializer_class = PetCategorySerializer
+    queryset = Species.objects.all().order_by('name')
+    serializer_class = SpeciesSerializer
     permission_classes = [permissions.AllowAny]
 
     def destroy(self, request, *args, **kwargs):

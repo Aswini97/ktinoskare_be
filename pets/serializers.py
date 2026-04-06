@@ -16,9 +16,9 @@ class PetSerializer(serializers.ModelSerializer):
             'healthStatus', 'notes', 'avatar', 'created_at', 'updated_at'
         ]
 
-class PetCategorySerializer(serializers.ModelSerializer):
+class SpeciesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PetCategory
+        model = Species
         fields = '__all__'
 
 class PetBreadSerializer(serializers.ModelSerializer):
