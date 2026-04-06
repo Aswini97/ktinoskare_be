@@ -11,7 +11,7 @@ class Species(models.Model):
     
 class PetBread(models.Model):
     name = models.CharField(max_length=100)
-    category = models.ForeignKey(Species, on_delete=models.CASCADE, related_name='breeds')
+    species = models.ForeignKey(Species, on_delete=models.CASCADE, related_name='breeds')
 
     def __str__(self):
         return self.name

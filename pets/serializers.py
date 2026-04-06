@@ -22,8 +22,8 @@ class SpeciesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PetBreadSerializer(serializers.ModelSerializer):
-    category_name = serializers.ReadOnlyField(source='category.name')
+    species_name = serializers.ReadOnlyField(source='species.name')
 
     class Meta:
         model = PetBread
-        fields = ['id', 'name', 'category', 'category_name']
+        fields = ['id', 'name', 'species', 'species_name']

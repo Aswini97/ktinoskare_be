@@ -77,15 +77,15 @@ class SpeciesViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response({
             "status": "success",
-            "message": f"Category '{name}' deleted successfully."
+            "message": f"Species '{name}' deleted successfully."
         }, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
     list=extend_schema(
         tags=["Pet Breeds"], 
-        description="List breeds. Optional: ?category_id=X to filter by category.",
-        parameters=[OpenApiParameter("category_id", type=int, required=False)]
+        description="List breeds. Optional: ?species_id=X to filter by species.",
+        parameters=[OpenApiParameter("species_id", type=int, required=False)]
     ),
     create=extend_schema(tags=["Pet Breeds"]),
     retrieve=extend_schema(tags=["Pet Breeds"]),
@@ -101,11 +101,11 @@ class PetBreadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = PetBread.objects.all().select_related('category').order_by('name')
-        category_id = self.request.query_params.get('category_id')
+        queryset = PetBread.objects.all().select_related('species').order_by('name')
+        species_id = self.request.query_params.get('species_id')
         
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
+        if species_id:
+            queryset = queryset.filter(species_id=species_id)
         return queryset
 
     def destroy(self, request, *args, **kwargs):
