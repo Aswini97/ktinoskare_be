@@ -39,7 +39,7 @@ class Pet(models.Model):
     nextCheckup = models.DateField(null=True, blank=True)
     healthStatus = models.CharField(max_length=20, choices=HEALTH_STATUS_CHOICES, default='Healthy')
     notes = models.TextField(blank=True)
-    avatar = models.URLField(blank=True)
+    avatar = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
