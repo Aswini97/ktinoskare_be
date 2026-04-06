@@ -56,16 +56,16 @@ class PetViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(tags=["Pet Categories"], description="List all pet categories (e.g., Cattle, Dogs)."),
-    create=extend_schema(tags=["Pet Categories"]),
-    retrieve=extend_schema(tags=["Pet Categories"]),
-    update=extend_schema(tags=["Pet Categories"]),
-    partial_update=extend_schema(tags=["Pet Categories"]),
-    destroy=extend_schema(tags=["Pet Categories"]),
+    list=extend_schema(tags=["Pet Species"], description="List all pet species (e.g., Cattle, Dogs)."),
+    create=extend_schema(tags=["Pet Species"]),
+    retrieve=extend_schema(tags=["Pet Species"]),
+    update=extend_schema(tags=["Pet Species"]),
+    partial_update=extend_schema(tags=["Pet Species"]),
+    destroy=extend_schema(tags=["Pet Species"]),
 )
 class SpeciesViewSet(viewsets.ModelViewSet):
     """
-    CRUD for Pet Categories.
+    CRUD for Pet Species.
     """
     queryset = Species.objects.all().order_by('name')
     serializer_class = SpeciesSerializer
