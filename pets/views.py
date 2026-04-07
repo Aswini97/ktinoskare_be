@@ -37,21 +37,14 @@ class PetViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        """
-        MANDATORY FILTER: Requires 'owner_id' query parameter for ALL actions.
-        """
         owner_id = self.request.query_params.get('owner_id')
         
         if not owner_id:
             return Pet.objects.none()
-            
-        # Matches 'owner' field in your Pet model
-        return Pet.objects.filter(owner=owner_id).select_related('device', 'breedId')
+
+        return Pet.objects.filter(owner=owner_id).select_related('device', 'breed_id', 'species_id')
 
     def perform_create(self, serializer):
-        """
-        The owner ID must be provided in the JSON body since auth is disabled.
-        """
         serializer.save()
 
 
@@ -64,9 +57,6 @@ class PetViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(tags=["Pet Species"]),
 )
 class SpeciesViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for Pet Species.
-    """
     queryset = Species.objects.all().order_by('name')
     serializer_class = SpeciesSerializer
     permission_classes = [permissions.AllowAny]
@@ -94,9 +84,6 @@ class SpeciesViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(tags=["Pet Breeds"]),
 )
 class PetBreadViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for Pet Breeds (naming follows your PetBread model).
-    """
     serializer_class = PetBreadSerializer
     permission_classes = [permissions.AllowAny]
 

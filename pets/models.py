@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from devices.models import Device
-# Create your models here.
 
 class Species(models.Model):
     name = models.CharField(max_length=100)
@@ -11,7 +10,7 @@ class Species(models.Model):
     
 class PetBread(models.Model):
     name = models.CharField(max_length=100)
-    species = models.ForeignKey(Species, on_delete=models.CASCADE, related_name='breeds')
+    species_id = models.ForeignKey(Species, on_delete=models.CASCADE, related_name='breeds')
 
     def __str__(self):
         return self.name
@@ -26,12 +25,11 @@ class Pet(models.Model):
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
     device = models.OneToOneField(Device, on_delete=models.SET_NULL, null=True, blank=True, related_name='pet')
-    name = models.CharField(max_length=100)
-    breedId = models.ForeignKey(PetBread, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
-    species = models.CharField(max_length=50, blank=True)
+    name = models.CharField(max_length=100)    
+    species_id = models.ForeignKey(Species, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
+    breed_id = models.ForeignKey(PetBread, on_delete=models.SET_NULL, null=True, blank=True, related_name='pets')
     gender = models.CharField(max_length=10, blank=True)
     dob = models.DateField(null=True, blank=True)
-    age = models.PositiveIntegerField(null=True, blank=True)
     weight = models.FloatField(null=True, blank=True)
     color = models.CharField(max_length=100, blank=True)
     vaccinated = models.BooleanField(default=False)
