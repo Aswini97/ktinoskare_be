@@ -4,6 +4,8 @@ from devices.models import Device
 
 class Species(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -11,6 +13,8 @@ class Species(models.Model):
 class PetBread(models.Model):
     name = models.CharField(max_length=100, unique=True)
     species_id = models.ForeignKey(Species, on_delete=models.CASCADE, related_name='breeds')
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -40,6 +44,8 @@ class Pet(models.Model):
     avatar = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name

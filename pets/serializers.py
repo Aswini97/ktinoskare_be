@@ -20,7 +20,7 @@ class PetSerializer(serializers.ModelSerializer):
             'species_id', 'species_name', 'breed_id', 'breed_name', 'gender', 
             'dob', 'weight', 'color', 'vaccinated', 'lastCheckup', 
             'nextCheckup', 'healthStatus', 'notes', 'avatar', 
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'is_deleted', 'deleted_at'
         ]
 
 class SpeciesSerializer(serializers.ModelSerializer):
@@ -29,7 +29,6 @@ class SpeciesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PetBreadSerializer(serializers.ModelSerializer):
-    # Maps 'species_id' for consistency
     species_name = serializers.ReadOnlyField(source='species_id.name')
 
     class Meta:

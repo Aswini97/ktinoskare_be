@@ -1,6 +1,7 @@
+from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from .models import Pet
+from .models import *
 from .serializers import *
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
@@ -38,18 +39,33 @@ class PetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         owner_id = self.request.query_params.get('owner_id')
-        
         if not owner_id:
             return Pet.objects.none()
 
-        return Pet.objects.filter(owner=owner_id).select_related('device', 'breed_id', 'species_id')
+        return Pet.objects.filter(
+            owner=owner_id, 
+            is_deleted=False
+        ).select_related('device', 'breed_id', 'species_id')
 
-    def perform_create(self, serializer):
-        serializer.save()
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            instance.is_deleted = True
+            instance.deleted_at = timezone.now()
+            instance.save()
+            return Response({
+                "status": "success",
+                "message": f"Pet '{instance.name}' soft-deleted successfully."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "status": "failure",
+                "message": f"Failed to delete pet: {str(e)}"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(
-    list=extend_schema(tags=["Pet Species"], description="List all pet species (e.g., Cattle, Dogs)."),
+    list=extend_schema(tags=["Pet Species"], description="List all active species."),
     create=extend_schema(tags=["Pet Species"]),
     retrieve=extend_schema(tags=["Pet Species"]),
     update=extend_schema(tags=["Pet Species"]),
@@ -57,24 +73,34 @@ class PetViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(tags=["Pet Species"]),
 )
 class SpeciesViewSet(viewsets.ModelViewSet):
-    queryset = Species.objects.all().order_by('name')
     serializer_class = SpeciesSerializer
     permission_classes = [permissions.AllowAny]
 
+    def get_queryset(self):
+        return Species.objects.filter(is_deleted=False).order_by('name')
+
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        name = instance.name
-        self.perform_destroy(instance)
-        return Response({
-            "status": "success",
-            "message": f"Species '{name}' deleted successfully."
-        }, status=status.HTTP_200_OK)
+        try:
+            instance = self.get_object()
+            name = instance.name
+            instance.is_deleted = True
+            instance.deleted_at = timezone.now()
+            instance.save()
+            return Response({
+                "status": "success",
+                "message": f"Species '{name}' soft-deleted successfully."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "status": "failure",
+                "message": f"Failed to delete species: {str(e)}"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(
     list=extend_schema(
         tags=["Pet Breeds"], 
-        description="List breeds. Optional: ?species_id=X to filter by species.",
+        description="List active breeds. Optional: ?species_id=X to filter.",
         parameters=[OpenApiParameter("species_id", type=int, required=False)]
     ),
     create=extend_schema(tags=["Pet Breeds"]),
@@ -88,7 +114,8 @@ class PetBreadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = PetBread.objects.all().select_related('species_id').order_by('name')
+        # Exclude soft-deleted breeds
+        queryset = PetBread.objects.filter(is_deleted=False).select_related('species_id').order_by('name')
         species_id = self.request.query_params.get('species_id')
         
         if species_id:
@@ -96,10 +123,18 @@ class PetBreadViewSet(viewsets.ModelViewSet):
         return queryset
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        name = instance.name
-        self.perform_destroy(instance)
-        return Response({
-            "status": "success",
-            "message": f"Breed '{name}' deleted successfully."
-        }, status=status.HTTP_200_OK)
+        try:
+            instance = self.get_object()
+            name = instance.name
+            instance.is_deleted = True
+            instance.deleted_at = timezone.now()
+            instance.save()
+            return Response({
+                "status": "success",
+                "message": f"Breed '{name}' soft-deleted successfully."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "status": "failure",
+                "message": f"Failed to delete breed: {str(e)}"
+            }, status=status.HTTP_400_BAD_REQUEST)
