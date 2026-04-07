@@ -3,13 +3,13 @@ from django.contrib.auth.models import User
 from devices.models import Device
 
 class Species(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
-    
+
 class PetBread(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     species_id = models.ForeignKey(Species, on_delete=models.CASCADE, related_name='breeds')
 
     def __str__(self):
