@@ -88,7 +88,7 @@ class PetBreadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = PetBread.objects.all().select_related('species').order_by('name')
+        queryset = PetBread.objects.all().select_related('species_id').order_by('name')
         species_id = self.request.query_params.get('species_id')
         
         if species_id:
