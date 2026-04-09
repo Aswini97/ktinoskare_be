@@ -30,6 +30,17 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://d3dhvkckoyx2k8.cloudfront.net",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://13.127.11.71",
+    "https://d3dhvkckoyx2k8.cloudfront.net"
+]
+
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",
