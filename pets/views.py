@@ -75,6 +75,7 @@ class PetViewSet(viewsets.ModelViewSet):
 class SpeciesViewSet(viewsets.ModelViewSet):
     serializer_class = SpeciesSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
     def get_queryset(self):
         return Species.objects.filter(is_deleted=False).order_by('name')
@@ -112,6 +113,7 @@ class SpeciesViewSet(viewsets.ModelViewSet):
 class PetBreadViewSet(viewsets.ModelViewSet):
     serializer_class = PetBreadSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
     def get_queryset(self):
         # Exclude soft-deleted breeds
