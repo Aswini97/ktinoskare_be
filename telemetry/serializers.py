@@ -30,3 +30,9 @@ class AccelStatSerializer(serializers.Serializer):
     y = serializers.FloatField()
     z = serializers.FloatField()
     date = serializers.DateField()
+
+class EnvironmentalStatSerializer(serializers.Serializer):
+    avg_temp = serializers.FloatField()
+    avg_humidity = serializers.FloatField()
+    avg_heat_index = serializers.FloatField()
+    date = serializers.DateField()

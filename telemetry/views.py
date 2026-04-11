@@ -66,12 +66,15 @@ class TelemetryRecordViewSet(viewsets.ReadOnlyModelViewSet):
             avg_hr=Avg('avg_heart_rate'), min_hr=Min('min_heart_rate'), max_hr=Max('max_heart_rate'),
             avg_o2=Avg('avg_spo2'), min_o2=Min('min_spo2'), max_o2=Max('max_spo2'),
             avg_temp=Avg('avg_object_temp'), max_temp=Max('max_object_temp'),
-            avg_ax=Avg('accel_x'), avg_ay=Avg('accel_y'), avg_az=Avg('accel_z')
+            avg_ax=Avg('accel_x'), avg_ay=Avg('accel_y'), avg_az=Avg('accel_z'),
+            avg_dht_temp=Avg('temp_dht22'),
+            avg_hum=Avg('humidity'),
+            avg_hi=Avg('heat_index')
         ).order_by('date')
 
         response_data = {
             "from": from_date, "to": to_date,
-            "data": {"heart": [], "spo2": [], "temperature": [], "accel": []}
+            "data": {"heart": [], "spo2": [], "temperature": [], "accel": [], "environment": []}
         }
 
         for entry in stats:
@@ -91,6 +94,12 @@ class TelemetryRecordViewSet(viewsets.ReadOnlyModelViewSet):
             response_data["data"]["accel"].append({
                 "x": round(entry['avg_ax'], 3), "y": round(entry['avg_ay'], 3), 
                 "z": round(entry['avg_az'], 3), "date": date_str
+            })
+            response_data["data"]["environment"].append({
+                "avg_temp": round(entry['avg_dht_temp'], 1) if entry['avg_dht_temp'] else None,
+                "avg_humidity": round(entry['avg_hum'], 1) if entry['avg_hum'] else None,
+                "avg_heat_index": round(entry['avg_hi'], 1) if entry['avg_hi'] else None,
+                "date": date_str
             })
 
         return Response(response_data)

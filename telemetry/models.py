@@ -38,6 +38,11 @@ class TelemetryRecord(models.Model):
     latitude = models.CharField(max_length=25, default="0.0")
     longitude = models.CharField(max_length=25, default="0.0")
 
+    # Humidity
+    temp_dht22 = models.FloatField(null=True, blank=True)
+    humidity = models.FloatField(null=True, blank=True)
+    heat_index = models.FloatField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
