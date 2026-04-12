@@ -1,12 +1,10 @@
 import os
 import sys
-import json
-import paho.mqtt.client as mqtt
 import django
-from datetime import datetime
 from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+import paho.mqtt.client as mqtt
 
 # Django setup
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -15,9 +13,11 @@ django.setup()
 
 from telemetry.models import TelemetryRecord, Device
 
+# --- CONFIGURATION ---
 BROKER = "mqtt"
 PORT = 1883
-TOPIC = "v1/pet/+/telemetry"
+# Listen to both pet and cattle topics using a wildcard
+TOPIC = "v1/+/+/telemetry" 
 
 def on_connect(client, userdata, flags, rc):
     print(f"✅ Connected to Broker [Code {rc}]")
@@ -25,49 +25,59 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     try:
+        # 1. Decode CSV string from ESP32 
         raw_payload = msg.payload.decode().strip()
-        d = json.loads(raw_payload) # 'd' for data shortcut
+        parts = raw_payload.split(',')
         
-        duid = d.get("id")
-        msg_type = d.get("t", "TEL") # TEL or ALRT
-        
-        # 1. GPS Guard Logic (Critical for data integrity)
-        lat = d.get("la", 0.0)
-        lon = d.get("lo", 0.0)
-        if float(lat) == 0.0 or float(lon) == 0.0:
-            print(f"📍 {duid}: Skipping record (Waiting for GPS lock...)")
+        if len(parts) < 14:
+            print(f"⚠️ Malformed payload: {len(parts)} elements found.")
             return
 
-        # 2. Database Save with Mapping
+        # 2. Map indices to variables 
+        duid = parts[0]   # device_uid
+        bpm  = parts[1]   # avg_heart_rate
+        spo2 = parts[2]   # avg_spo2
+        amb_t = parts[3]  # avg_ambient_temp
+        obj_t = parts[4]  # avg_object_temp
+        ax, ay, az = parts[5], parts[6], parts[7]
+        light = parts[9]
+        batt_v = parts[10]
+        batt_p = parts[11]
+        lat, lon = parts[12], parts[13]
+        dht_t = parts[14]
+        dht_h = parts[15]
+        dht_hi = parts[16]
+
+        # 3. GPS Guard
+        if float(lat) == 0.0 or float(lon) == 0.0:
+            print(f"📍 {duid}: Skipping (Waiting for GPS lock...)")
+            return
+
+        # 4. Save to Database
         device = Device.objects.get(device_uid=duid)
         record = TelemetryRecord.objects.create(
             device=device,
-            is_emergency=(msg_type == "ALRT"),
-            window_seconds=d.get("w", 30),
-            
-            avg_heart_rate=d.get("ahr"),
-            min_heart_rate=d.get("nhr"),
-            max_heart_rate=d.get("mhr"),
-            
-            avg_spo2=d.get("as2"),
-            avg_ambient_temp=d.get("aat"),
-            avg_object_temp=d.get("aot"),
-            max_object_temp=d.get("mot"),
-            
-            accel_x=d.get("ax"),
-            accel_y=d.get("ay"),
-            accel_z=d.get("az"),
-            motion_detected=d.get("m", False),
-            light_level=d.get("l"),
-            battery_voltage=d.get("bv"),
-            battery_percentage=d.get("bp"),
+            is_emergency=False,
+            avg_heart_rate=float(bpm),
+            avg_spo2=float(spo2),
+            avg_ambient_temp=float(amb_t),
+            avg_object_temp=float(obj_t),
+            accel_x=float(ax),
+            accel_y=float(ay),
+            accel_z=float(az),
+            light_level=float(light),
+            battery_voltage=float(batt_v),
+            battery_percentage=int(batt_p),
             latitude=str(lat),
             longitude=str(lon),
+            temp_dht22=float(dht_t) if dht_t else None,
+            humidity=float(dht_h) if dht_h else None,
+            heat_index=float(dht_hi) if dht_hi else None
         )
         
-        print(f"📊 {duid}: Saved {'ALERT' if record.is_emergency else 'Telemetry'} at {timezone.now()}")
+        print(f"📊 {duid}: Record Saved from Jammu Pilot at {timezone.now()}")
 
-        # 3. WebSocket Broadcast (Keeping the frontend fast)
+        # 5. Live WebSocket Broadcast
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"device_{duid}",
@@ -84,17 +94,19 @@ def on_message(client, userdata, msg):
         )
 
     except Device.DoesNotExist:
-        print(f"⚠️ Error: Unknown Device {d.get('id')}")
+        print(f"⚠️ Unknown Device: {parts[0]}")
     except Exception as e:
         print(f"🔥 Error: {str(e)}")
 
+# --- START SERVICE ---
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-print(f"🚀 KTINO Multi-Pet Worker Active. Monitoring topics: {TOPIC}")
+print(f"🚀 KTINO CSV Worker Active. Monitoring: {TOPIC}")
 client.connect(BROKER, PORT, 60)
 client.loop_forever()
+
 
 
 # import os
