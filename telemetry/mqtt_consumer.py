@@ -16,12 +16,16 @@ from telemetry.models import TelemetryRecord, Device
 # --- CONFIGURATION ---
 BROKER = "mqtt"
 PORT = 1883
-# Listen to both pet and cattle topics using a wildcard
 TOPIC = "v1/+/+/telemetry" 
 
-def on_connect(client, userdata, flags, rc):
-    print(f"✅ Connected to Broker [Code {rc}]")
-    client.subscribe(TOPIC)
+# --- UPDATED ON_CONNECT FOR API V2 ---
+# Added 'reason_code' and 'properties' to match the new Paho signature
+def on_connect(client, userdata, flags, reason_code, properties=None):
+    if reason_code == 0:
+        print(f"✅ Connected to Broker [Success]")
+        client.subscribe(TOPIC)
+    else:
+        print(f"❌ Connection Failed [Code {reason_code}]")
 
 def on_message(client, userdata, msg):
     try:
@@ -35,7 +39,7 @@ def on_message(client, userdata, msg):
             print(f"⚠️ Malformed payload: {len(parts)}/17 elements found.")
             return
 
-        # 2. Map indices to variables
+        # 2. Map indices to variables 
         duid = parts[0]
         bpm  = parts[1]
         spo2 = parts[2]
@@ -52,6 +56,7 @@ def on_message(client, userdata, msg):
         dht_h = parts[15]
         dht_hi = parts[16]
 
+        # 3. RELAXED GPS Logic
         gps_status = "FIXED"
         if float(lat) == 0.0 or float(lon) == 0.0:
             gps_status = "NO FIX (Saving with 0.0)"
@@ -68,7 +73,7 @@ def on_message(client, userdata, msg):
             accel_x=float(ax),
             accel_y=float(ay),
             accel_z=float(az),
-            motion_detected=is_moving, 
+            motion_detected=is_moving,
             light_level=float(light),
             battery_voltage=float(batt_v),
             battery_percentage=int(batt_p),
@@ -79,10 +84,9 @@ def on_message(client, userdata, msg):
             heat_index=float(dht_hi) if dht_hi else None
         )
         
-        # Detailed Console Output showing what data is coming
+        # Summary Console Output
         status_text = "MOVING" if is_moving else "STILL"
         print(f"📊 {duid} | GPS: {gps_status} | Status: {status_text} | HR: {bpm} | Temp: {obj_t}C")
-        print(f"🌡️ DHT22: {dht_t}C / {dht_h}% | Batt: {batt_p}%")
         print(f"✅ Record Saved at {timezone.now()}")
 
         # 5. Live WebSocket Broadcast
@@ -107,11 +111,11 @@ def on_message(client, userdata, msg):
     except Exception as e:
         print(f"🔥 Processing Error: {str(e)}")
 
-# --- START SERVICE ---
-client = mqtt.Client()
+# --- START SERVICE WITH API V2 CLIENT ---
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
 client.on_message = on_message
 
-print(f"🚀 KTINO CSV Worker Active. Monitoring: {TOPIC}")
+print(f"🚀 KTINO Worker (v2.0) Active. Monitoring: {TOPIC}")
 client.connect(BROKER, PORT, 60)
 client.loop_forever()
