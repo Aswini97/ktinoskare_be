@@ -75,31 +75,36 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
                         ).order_by("-created_at").first()
                     )
                     if latest:
+                        # Corrected mapping to match your models.py
                         payload = {
                             "id": latest.id,
-                            "device_id": latest.device_id,
-                            "ts": str(latest.created_at),
-                            "hr": getattr(latest, "heart_rate", None),
-                            "spo2": getattr(latest, "spo2", None),
-                            "amb_temp": getattr(latest, "ambient_temperature", None),
-                            "obj_temp": getattr(latest, "object_temperature", None),
-                            "ax": getattr(latest, "accel_x", None),
-                            "ay": getattr(latest, "accel_y", None),
-                            "az": getattr(latest, "accel_z", None),
-                            "motion": getattr(latest, "motion_detected", None),
-                            "light": getattr(latest, "light_level", None),
-                            "batt_v": getattr(latest, "battery_voltage", None),
-                            "batt_pct": getattr(latest, "battery_percentage", None),
-                            "lat": getattr(latest, "latitude", None),
-                            "long": getattr(latest, "longitude", None),
+                            "duid": self.device.device_uid,
+                            "ts": latest.created_at.isoformat(),
+                            "hr": latest.avg_heart_rate,
+                            "spo2": latest.avg_spo2,
+                            "amb_t": latest.avg_ambient_temp,
+                            "obj_t": latest.avg_object_temp,
+                            "ax": latest.accel_x,
+                            "ay": latest.accel_y,
+                            "az": latest.accel_z,
+                            "motion": latest.motion_detected,
+                            "light": latest.light_level,
+                            "batt_v": latest.battery_voltage,
+                            "batt_p": latest.battery_percentage,
+                            "lat": latest.latitude,
+                            "lon": latest.longitude,
+                            "dht_t": latest.temp_dht22,
+                            "hum": latest.humidity,
+                            "hi": latest.heat_index,
                         }
                         await self.send(json.dumps({"telemetry": payload}))
-                # Heartbeat
-                await self.send(json.dumps({"heartbeat": True}))
+                
                 await asyncio.sleep(self.interval)
         except asyncio.CancelledError:
             pass
 
-    # Handler for telemetry messages pushed into the group by mqtt_consumer
+    # This handles the REAL-TIME push from your mqtt_worker
     async def telemetry_message(self, event):
+        # We wrap it in a 'telemetry' key so the frontend 
+        # only has to listen for one type of message
         await self.send(json.dumps({"telemetry": event["data"]}))
