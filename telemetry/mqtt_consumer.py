@@ -90,7 +90,6 @@ def on_message(client, userdata, msg):
         print(f"✅ Record Saved at {timezone.now()}")
 
         # 5. Live WebSocket Broadcast
-        # 5. Live WebSocket Broadcast (Inside mqtt_consumer.py)
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"device_{duid}",
