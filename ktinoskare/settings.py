@@ -37,7 +37,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://13.127.11.71",
+    "https://13.233.237.155",
     "https://d3dhvkckoyx2k8.cloudfront.net"
 ]
 
