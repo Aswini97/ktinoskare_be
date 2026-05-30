@@ -6,7 +6,7 @@ router = DefaultRouter()
 
 # Master Data endpoints (order matters for the router)
 router.register('species', SpeciesViewSet, basename='pet-species')
-router.register('breeds', PetBreadViewSet, basename='pet-breeds')
+router.register('breeds', PetBreedViewSet, basename='pet-breeds')
 
 # Main Pet Records
 router.register('', PetViewSet, basename='pets')

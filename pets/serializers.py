@@ -28,9 +28,9 @@ class SpeciesSerializer(serializers.ModelSerializer):
         model = Species
         fields = '__all__'
 
-class PetBreadSerializer(serializers.ModelSerializer):
+class PetBreedSerializer(serializers.ModelSerializer):
     species_name = serializers.ReadOnlyField(source='species_id.name')
 
     class Meta:
-        model = PetBread
+        model = PetBreed
         fields = ['id', 'name', 'species_id', 'species_name']

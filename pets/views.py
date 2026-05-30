@@ -110,14 +110,14 @@ class SpeciesViewSet(viewsets.ModelViewSet):
     partial_update=extend_schema(tags=["Pet Breeds"]),
     destroy=extend_schema(tags=["Pet Breeds"]),
 )
-class PetBreadViewSet(viewsets.ModelViewSet):
-    serializer_class = PetBreadSerializer
+class PetBreedViewSet(viewsets.ModelViewSet):
+    serializer_class = PetBreedSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = None
 
     def get_queryset(self):
         # Exclude soft-deleted breeds
-        queryset = PetBread.objects.filter(is_deleted=False).select_related('species_id').order_by('name')
+        queryset = PetBreed.objects.filter(is_deleted=False).select_related('species_id').order_by('name')
         species_id = self.request.query_params.get('species_id')
         
         if species_id:

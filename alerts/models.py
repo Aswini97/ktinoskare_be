@@ -3,10 +3,12 @@ from devices.models import Device
 
 class Alert(models.Model):
     ALERT_TYPES = (
-        ('high_temperature', 'High Temperature'),
-        ('low_battery', 'Low Battery'),
-        ('abnormal_heart_rate', 'Abnormal Heart Rate'),
-        ('geofence_breach', 'Geofence Breach'),
+        ('LOW_TEMP', 'Low Temperature Exception'),
+        ('HIGH_TEMP', 'High Temperature Exception'),
+        ('LOW_BATTERY', 'Low Battery Warning'),
+        ('ABNORMAL_HR', 'Abnormal Heart Rate'),
+        ('GEOFENCE_BREACH', 'Geofence Exit Breach'),
+        ('GEOFENCE_ENTRY', 'Geofence Entry'),
     )
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='alerts')
     alert_type = models.CharField(max_length=50, choices=ALERT_TYPES)

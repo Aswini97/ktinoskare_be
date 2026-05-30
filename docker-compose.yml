@@ -4,7 +4,7 @@ services:
   # 1. Reverse Proxy Gateway
   nginx:
     image: nginx:latest
-    container_name: ktinoscare_nginx
+    container_name: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -19,7 +19,7 @@ services:
   db:
     # Combines Postgres 15 core + TimescaleDB time-series + PostGIS spatial primitives
     image: timescale/timescaledb-ha:pg15-oss
-    container_name: ktinoscare_spatial_db
+    container_name: spatial_db
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
@@ -34,7 +34,7 @@ services:
   mqtt:
     # Production-grade EMQX supporting high-concurrency mTLS and native serverless S3 data bridges
     image: emqx/emqx:5.7.0
-    container_name: ktinoscare_emqx_broker
+    container_name: emqx_broker
     restart: always
     ports:
       - "1883:1883"   # Standard unencrypted entry channel
@@ -46,7 +46,7 @@ services:
   # 4. Asynchronous Ingestion Telemetry Worker
   mqtt_worker:
     build: .
-    container_name: ktinoscare_mqtt_worker
+    container_name: mqtt_worker
     volumes:
       - .:/app
     command: python telemetry/mqtt_consumer.py
@@ -63,12 +63,12 @@ services:
   # 5. Core Django REST Application Server
   web:
     build: .
-    container_name: ktinoscare_web_app
+    container_name: web_app
     restart: always
     command: >
       sh -c "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done &&
             python manage.py migrate &&
-            daphne -b 0.0.0.0 -p 8000 ktinoskare.asgi:application"
+            python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     depends_on:
@@ -93,7 +93,7 @@ services:
   # 6. Database Graphical Administration Console
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: ktinoscare_pgadmin
+    container_name: pgadmin
     restart: always
     ports:
       - "5050:80"
