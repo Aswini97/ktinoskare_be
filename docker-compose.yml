@@ -17,7 +17,6 @@ services:
 
   # 2. Centralized Spatial-Temporal Database Engine
   db:
-    # Combines Postgres 15 core + TimescaleDB time-series + PostGIS spatial primitives
     image: timescale/timescaledb-ha:pg15-oss
     container_name: spatial_db
     restart: always
@@ -32,16 +31,16 @@ services:
 
   # 3. Enterprise Message Broker Ingestion Layer
   mqtt:
-    # Production-grade EMQX supporting high-concurrency mTLS and native serverless S3 data bridges
     image: emqx/emqx:5.7.0
     container_name: emqx_broker
+    user: "root" 
     restart: always
     ports:
-      - "1883:1883"   # Standard unencrypted entry channel
-      - "8883:8883"   # Secure Production mTLS interface tunnel (Section 4.1 Contract)
-      - "18083:18083" # EMQX Admin Web Configuration Dashboard Console
+      - "1883:1883"
+      - "8883:8883"
+      - "18083:18083"
     volumes:
-      - mosquitto_data:/opt/emqx/data
+      - emqx_data_vol:/opt/emqx/data
 
   # 4. Asynchronous Ingestion Telemetry Worker
   mqtt_worker:
@@ -59,6 +58,8 @@ services:
       - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
       - DEBUG=True
       - PYTHONUNBUFFERED=1
+      - MQTT_BROKER_HOST=mqtt
+      - MQTT_BROKER_PORT=1883
 
   # 5. Core Django REST Application Server
   web:
@@ -111,9 +112,9 @@ services:
     container_name: redis
     restart: always
     ports:
-      - "16379:6379" # Bound to 16379 on host to completely clear Windows socket blocks
+      - "16379:6379"
 
 volumes:
   postgres_data:
-  mosquitto_data:
+  emqx_data_vol:
   pgadmin_data:
