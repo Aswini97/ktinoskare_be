@@ -41,6 +41,11 @@ services:
       - "18083:18083"
     volumes:
       - emqx_data_vol:/opt/emqx/data
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # 4. Asynchronous Ingestion Telemetry Worker
   mqtt_worker:
@@ -51,8 +56,10 @@ services:
     command: python telemetry/mqtt_consumer.py
     restart: always
     depends_on:
-      - db
-      - mqtt
+      db:
+        condition: service_started
+      mqtt:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
       - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
@@ -61,10 +68,10 @@ services:
       - MQTT_BROKER_HOST=mqtt
       - MQTT_BROKER_PORT=1883
 
-  # 5. Core Django REST Application Server
+  # 5. Core Django REST Application Server (with Hot-Reloading)
   web:
     build: .
-    container_name: web_app
+    container_name: ktinoscare_web_app
     restart: always
     command: >
       sh -c "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done &&
@@ -74,8 +81,8 @@ services:
       - .:/app
     depends_on:
       - db
-      - mqtt
       - redis
+      - mqtt
     environment:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
       - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
@@ -116,5 +123,5 @@ services:
 
 volumes:
   postgres_data:
-  emqx_data_vol:
+  emqx_data_vol: 
   pgadmin_data:
