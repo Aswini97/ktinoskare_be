@@ -7,13 +7,16 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install system dependencies
-# Added 'gcc' and 'python3-dev' to ensure C-extensions (like psycopg2) compile correctly
+# Added C-extensions, networking tools, and essential geospatial binaries (GDAL/GEOS) for PostGIS mapping
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
     python3-dev \
     netcat-traditional \
+    binutils \
+    gdal-bin \
+    libgdal-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -22,12 +25,12 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the project files
+# Copy the project files securely into the active working directory container area
 COPY . .
 
 # Expose the internal port used by Daphne
 EXPOSE 8000
 
 # Default command (this is overridden by docker-compose for specific services)
-# This default version includes a check to ensure the DB is ready before starting
+# Includes validation loop to check database socket availability before migrations launch
 CMD ["sh", "-c", "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done && python manage.py migrate && daphne -b 0.0.0.0 -p 8000 ktinoskare.asgi:application"]

@@ -1,6 +1,10 @@
+version: '3.8'
+
 services:
+  # 1. Reverse Proxy Gateway
   nginx:
     image: nginx:latest
+    container_name: ktinoscare_nginx
     ports:
       - "80:80"
       - "443:443"
@@ -9,9 +13,13 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - web
+    restart: always
 
+  # 2. Centralized Spatial-Temporal Database Engine
   db:
-    image: postgres:15-alpine
+    # Combines Postgres 15 core + TimescaleDB time-series + PostGIS spatial primitives
+    image: timescale/timescaledb-ha:pg15-oss
+    container_name: ktinoscare_spatial_db
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
@@ -19,18 +27,26 @@ services:
       - POSTGRES_DB=cattle_db
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=your_secure_password
+    ports:
+      - "5432:5432"
 
+  # 3. Enterprise Message Broker Ingestion Layer
   mqtt:
-    image: eclipse-mosquitto:latest
+    # Production-grade EMQX supporting high-concurrency mTLS and native serverless S3 data bridges
+    image: emqx/emqx:5.7.0
+    container_name: ktinoscare_emqx_broker
     restart: always
     ports:
-      - "1883:1883"
+      - "1883:1883"   # Standard unencrypted entry channel
+      - "8883:8883"   # Secure Production mTLS interface tunnel (Section 4.1 Contract)
+      - "18083:18083" # EMQX Admin Web Configuration Dashboard Console
     volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - mosquitto_data:/mosquitto/data
+      - mosquitto_data:/opt/emqx/data
 
+  # 4. Asynchronous Ingestion Telemetry Worker
   mqtt_worker:
     build: .
+    container_name: ktinoscare_mqtt_worker
     volumes:
       - .:/app
     command: python telemetry/mqtt_consumer.py
@@ -40,29 +56,44 @@ services:
       - mqtt
     environment:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
+      - DEBUG=True
       - PYTHONUNBUFFERED=1
 
+  # 5. Core Django REST Application Server
   web:
     build: .
+    container_name: ktinoscare_web_app
     restart: always
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done &&
+            python manage.py migrate &&
             daphne -b 0.0.0.0 -p 8000 ktinoskare.asgi:application"
     volumes:
       - .:/app
-    # REMOVED: ports section here to avoid conflict with Nginx on port 80
     depends_on:
       - db
       - mqtt
       - redis
     environment:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,d3dhvkckoyx2k8.cloudfront.net
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,https://d3dhvkckoyx2k8.cloudfront.net
+      - CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://localhost:3000,http://localhost:5173,https://d3dhvkckoyx2k8.cloudfront.net
+      - REDIS_URL=redis://redis:6379/0
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
       - DJANGO_SETTINGS_MODULE=ktinoskare.settings
+      - AWS_ACCESS_KEY_ID=mock_local_key
+      - AWS_SECRET_ACCESS_KEY=mock_local_secret
+      - AWS_STORAGE_BUCKET_NAME=ktinoscare-telemetry-bucket
 
+  # 6. Database Graphical Administration Console
   pgadmin:
     image: dpage/pgadmin4:latest
+    container_name: ktinoscare_pgadmin
     restart: always
     ports:
       - "5050:80"
@@ -74,12 +105,13 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  # 7. Asynchronous Caching & Redis Task Broker
   redis:
-    image: redis:6
+    image: redis:6-alpine
     container_name: redis
     restart: always
     ports:
-      - "6380:6379"
+      - "16379:6379" # Bound to 16379 on host to completely clear Windows socket blocks
 
 volumes:
   postgres_data:
