@@ -17,7 +17,7 @@ from telemetry.models import TelemetryRecord, Device
 # --- RECONFIGURED CLEAN CONFIGURATION presETS ---
 BROKER = os.getenv("MQTT_BROKER_HOST", "mqtt")
 PORT = int(os.getenv("MQTT_BROKER_PORT", 1883))
-TOPIC = os.getenv("MQTT_TELEMETRY_TOPIC", "v1/+/+/telemetry")
+TOPIC = os.getenv("MQTT_TELEMETRY_TOPIC", "ktinoscare/device/+/telemetry")
 
 
 def on_connect(client, userdata, flags, reason_code, properties=None):

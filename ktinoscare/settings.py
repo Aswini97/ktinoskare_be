@@ -189,4 +189,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # --- EMQX CONFIGURATION PRESETS FOR WORKER ENVIRONMENT ---
 MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST", "mqtt")
 MQTT_BROKER_PORT = env_int("MQTT_BROKER_PORT", 1883)
-MQTT_TELEMETRY_TOPIC = os.getenv("MQTT_TELEMETRY_TOPIC", "v1/+/+/telemetry")
+MQTT_TELEMETRY_TOPIC = os.getenv("MQTT_TELEMETRY_TOPIC", "ktinoscare/device/+/telemetry")
