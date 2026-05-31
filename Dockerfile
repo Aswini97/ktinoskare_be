@@ -33,4 +33,4 @@ EXPOSE 8000
 
 # Default command (this is overridden by docker-compose for specific services)
 # Includes validation loop to check database socket availability before migrations launch
-CMD ["sh", "-c", "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done && python manage.py migrate && daphne -b 0.0.0.0 -p 8000 ktinoskare.asgi:application"]
+CMD ["sh", "-c", "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done && python manage.py migrate && daphne -b 0.0.0.0 -p 8000 ktinoscare.asgi:application"]

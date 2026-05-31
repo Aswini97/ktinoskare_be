@@ -1,6 +1,6 @@
-# 🚜 KtinosKare Backend Development Engine
+# 🚜 ktinoscare Backend Development Engine
 
-This repository houses the core Python/Django application framework for the KtinosKare tracking ecosystem. This guide details the explicit configuration steps required to spin up the thin vertical slice (Walking Skeleton) development sandbox on your local machine using containerized components.
+This repository houses the core Python/Django application framework for the ktinoscare tracking ecosystem. This guide details the explicit configuration steps required to spin up the thin vertical slice (Walking Skeleton) development sandbox on your local machine using containerized components.
 
 ---
 

@@ -93,7 +93,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
-      - DJANGO_SETTINGS_MODULE=ktinoskare.settings
+      - DJANGO_SETTINGS_MODULE=ktinoscare.settings
       - AWS_ACCESS_KEY_ID=mock_local_key
       - AWS_SECRET_ACCESS_KEY=mock_local_secret
       - AWS_STORAGE_BUCKET_NAME=ktinoscare-telemetry-bucket

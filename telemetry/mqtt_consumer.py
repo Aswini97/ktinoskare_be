@@ -9,7 +9,7 @@ import paho.mqtt.client as mqtt
 
 # Django system setup synchronization
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ktinoskare.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ktinoscare.settings")
 django.setup()
 
 from telemetry.models import TelemetryRecord, Device
