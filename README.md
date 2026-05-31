@@ -23,6 +23,7 @@ Create a `.env` file in the project's root directory to seed local secrets:
 
 ```cmd
 # For Windows Command Prompt or PowerShell
+set DJANGO_SECRET_KEY=local_development_secure_key_string_123456789
 echo DJANGO_SECRET_KEY="django-insecure-your-hardcoded-fallback-secret-key-here" >> .env
 echo DEBUG=True >> .env
 

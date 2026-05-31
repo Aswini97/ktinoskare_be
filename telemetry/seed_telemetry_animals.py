@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import psycopg2
 
 # Database connection settings
-DB_NAME = "cattle_db"
+DB_NAME = "ktinoscare_db"
 DB_USER = "admin"
 DB_PASSWORD = "your_secure_password"
 DB_HOST = "db"

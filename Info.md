@@ -38,7 +38,7 @@ Your devices must exist in the database before sending telemetry. Example device
 Publish telemetry data to MQTT broker:
 
 ```bash
-docker exec -it ktinoskare_be-mqtt-1 mosquitto_pub -t "v1/cattle/KTINO_002/telemetry" -m "KTINO_002,80,98,28.5,32.2,0.1,0.2,9.8,1,1.5,4.0,90,12.9716,77.5946"
+docker exec -it ktinoskare_be-mqtt-1 mosquitto_pub -t "v1/ktinoscare/KTINO_002/telemetry" -m "KTINO_002,80,98,28.5,32.2,0.1,0.2,9.8,1,1.5,4.0,90,12.9716,77.5946"
 ```
 
 **CSV Format Breakdown:**
@@ -217,7 +217,7 @@ docker-compose logs mqtt_worker --tail=20
 **Device not found error:**
 ```bash
 # Check device UID in database
-docker-compose exec db psql -U admin -d cattle_db -c "SELECT device_uid FROM devices_device;"
+docker-compose exec db psql -U admin -d ktinoscare_db -c "SELECT device_uid FROM devices_device;"
 ```
 
 ### Full End-to-End Test
@@ -230,7 +230,7 @@ docker-compose up -d
 docker-compose ps
 
 # 3. Publish MQTT message
-docker exec -it ktinoskare_be-mqtt-1 mosquitto_pub -t "v1/cattle/KTINO_001/telemetry" -m "KTINO_001,75,96,26.0,30.5,0.05,0.15,9.8,0,2.0,4.1,88,40.7128,-74.0060"
+docker exec -it ktinoskare_be-mqtt-1 mosquitto_pub -t "v1/ktinoscare/KTINO_001/telemetry" -m "KTINO_001,75,96,26.0,30.5,0.05,0.15,9.8,0,2.0,4.1,88,40.7128,-74.0060"
 
 # 4. Check MQTT consumer processed it
 docker-compose logs mqtt_worker --tail=15

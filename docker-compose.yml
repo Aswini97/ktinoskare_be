@@ -23,7 +23,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_DB=cattle_db
+      - POSTGRES_DB=ktinoscare_db
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=your_secure_password
     ports:
@@ -61,7 +61,7 @@ services:
       mqtt:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/ktinoscare_db
       - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
       - DEBUG=True
       - PYTHONUNBUFFERED=1
@@ -84,7 +84,7 @@ services:
       - redis
       - mqtt
     environment:
-      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/ktinoscare_db
       - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
       - DEBUG=True
       - ALLOWED_HOSTS=localhost,127.0.0.1,d3dhvkckoyx2k8.cloudfront.net
