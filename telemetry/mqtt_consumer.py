@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.contrib.gis.geos import Point # Native spatial geometry blueprint constructor
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from datetime import timezone as datetime_timezone
 import paho.mqtt.client as mqtt
 
 # Django system setup synchronization
@@ -105,7 +106,7 @@ def on_message(client, userdata, msg):
         rssi_val          = int(parts[26]) if parts[26] else None
 
         # Build dynamic time-aware partition tracking coordinate
-        packet_time = timezone.datetime.fromtimestamp(timestamp_raw, tz=timezone.utc)
+        packet_time = timezone.datetime.fromtimestamp(timestamp_raw, tz=datetime_timezone.utc)
 
         # --- NATIVE POSTGIS GEOMETRY GENERATION MATRIX ---
         # CRITICAL: Point constructor explicitly mandates positional layout order -> Point(longitude, latitude)
