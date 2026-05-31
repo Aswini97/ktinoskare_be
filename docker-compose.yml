@@ -17,14 +17,13 @@ services:
 
   # 2. Centralized Spatial-Temporal Database Engine
   db:
-    # Combines Postgres 15 core + TimescaleDB time-series + PostGIS spatial primitives
     image: timescale/timescaledb-ha:pg15-oss
     container_name: spatial_db
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_DB=cattle_db
+      - POSTGRES_DB=ktinoscare_db
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=your_secure_password
     ports:
@@ -32,16 +31,21 @@ services:
 
   # 3. Enterprise Message Broker Ingestion Layer
   mqtt:
-    # Production-grade EMQX supporting high-concurrency mTLS and native serverless S3 data bridges
     image: emqx/emqx:5.7.0
     container_name: emqx_broker
+    user: "root" 
     restart: always
     ports:
-      - "1883:1883"   # Standard unencrypted entry channel
-      - "8883:8883"   # Secure Production mTLS interface tunnel (Section 4.1 Contract)
-      - "18083:18083" # EMQX Admin Web Configuration Dashboard Console
+      - "1883:1883"
+      - "8883:8883"
+      - "18083:18083"
     volumes:
-      - mosquitto_data:/opt/emqx/data
+      - emqx_data_vol:/opt/emqx/data
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # 4. Asynchronous Ingestion Telemetry Worker
   mqtt_worker:
@@ -52,18 +56,22 @@ services:
     command: python telemetry/mqtt_consumer.py
     restart: always
     depends_on:
-      - db
-      - mqtt
+      db:
+        condition: service_started
+      mqtt:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/ktinoscare_db
       - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
       - DEBUG=True
       - PYTHONUNBUFFERED=1
+      - MQTT_BROKER_HOST=mqtt
+      - MQTT_BROKER_PORT=1883
 
-  # 5. Core Django REST Application Server
+  # 5. Core Django REST Application Server (with Hot-Reloading)
   web:
     build: .
-    container_name: web_app
+    container_name: ktinoscare_web_app
     restart: always
     command: >
       sh -c "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done &&
@@ -73,10 +81,10 @@ services:
       - .:/app
     depends_on:
       - db
-      - mqtt
       - redis
+      - mqtt
     environment:
-      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/ktinoscare_db
       - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
       - DEBUG=True
       - ALLOWED_HOSTS=localhost,127.0.0.1,d3dhvkckoyx2k8.cloudfront.net
@@ -85,7 +93,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
-      - DJANGO_SETTINGS_MODULE=ktinoskare.settings
+      - DJANGO_SETTINGS_MODULE=ktinoscare.settings
       - AWS_ACCESS_KEY_ID=mock_local_key
       - AWS_SECRET_ACCESS_KEY=mock_local_secret
       - AWS_STORAGE_BUCKET_NAME=ktinoscare-telemetry-bucket
@@ -111,9 +119,9 @@ services:
     container_name: redis
     restart: always
     ports:
-      - "16379:6379" # Bound to 16379 on host to completely clear Windows socket blocks
+      - "16379:6379"
 
 volumes:
   postgres_data:
-  mosquitto_data:
+  emqx_data_vol: 
   pgadmin_data:

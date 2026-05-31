@@ -2,6 +2,7 @@ from django.contrib.gis.db import models
 from devices.models import Device
 
 class TelemetryRecord(models.Model):
+    id = models.AutoField(primary_key=True)
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='telemetry')
     
     # Metadata
@@ -45,7 +46,7 @@ class TelemetryRecord(models.Model):
     created_at = models.DateTimeField() # Hypertable chunk partition coordinate tracking axis
 
     class Meta:
-        db_table = 'tracker_telemetryrecord'
+        db_table = 'telemetry_telemetryrecord'
         ordering = ['-created_at']
 
     def __str__(self):

@@ -1,6 +1,6 @@
-# 🚜 KtinosKare Backend Development Engine
+# 🚜 ktinoscare Backend Development Engine
 
-This repository houses the core Python/Django application framework for the KtinosKare tracking ecosystem. This guide details the explicit configuration steps required to spin up the thin vertical slice (Walking Skeleton) development sandbox on your local machine using containerized components.
+This repository houses the core Python/Django application framework for the ktinoscare tracking ecosystem. This guide details the explicit configuration steps required to spin up the thin vertical slice (Walking Skeleton) development sandbox on your local machine using containerized components.
 
 ---
 
@@ -23,6 +23,7 @@ Create a `.env` file in the project's root directory to seed local secrets:
 
 ```cmd
 # For Windows Command Prompt or PowerShell
+set DJANGO_SECRET_KEY=local_development_secure_key_string_123456789
 echo DJANGO_SECRET_KEY="django-insecure-your-hardcoded-fallback-secret-key-here" >> .env
 echo DEBUG=True >> .env
 
