@@ -133,7 +133,7 @@ CORS_ALLOW_HEADERS = [
 
 # --- DATABASE LAYER SETUP (POSTGIS SPATIAL ENGINE) ---
 db_config = dj_database_url.config(
-    default=os.getenv("DATABASE_URL", "postgis://admin:your_secure_password@db:5432/cattle_db"),
+    default=os.getenv("DATABASE_URL", "postgis://admin:your_secure_password@db:5432/ktinoscare_db"),
     conn_max_age=env_int("DATABASE_CONN_MAX_AGE", 600),
     ssl_require=env_bool("DATABASE_SSL_REQUIRE", False),
 )

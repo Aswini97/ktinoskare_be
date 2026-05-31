@@ -1,110 +1,72 @@
 import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.utils.timezone import now
+from asgiref.sync import sync_to_async
 
 class TelemetryConsumer(AsyncWebsocketConsumer):
-    DEFAULT_INTERVAL = 30  # seconds
+    DEFAULT_INTERVAL = 10  # Reduced to keep client screens responsive
 
     async def connect(self):
+        self.device_uid = self.scope['url_route']['kwargs'].get('device_uid')
+        self.group_name = f"device_{self.device_uid}"
+        self.keep_running = True
+
+        # Join the multi-tenant real-time channel group
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        self.device = None
-        self.interval = self.DEFAULT_INTERVAL
-        self.task = None
-        print("✅ WebSocket client connected")
-        await self.send(json.dumps({"ok": True}))
+        print(f"✅ WebSocket client initialized channel bridge for device: {self.device_uid}")
+        
+        # Start the historical fallback logging stream thread asynchronously
+        self.loop_task = asyncio.create_task(self.stream_historical_fallback())
 
     async def disconnect(self, close_code):
-        if self.task:
-            self.task.cancel()
-        print("❌ WebSocket client disconnected")
-        await self.send(json.dumps({"status": "terminated"}))
+        self.keep_running = False
+        if hasattr(self, 'loop_task'):
+            self.loop_task.cancel()
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        print(f"❌ WebSocket client severed connection for device: {self.device_uid}")
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
-
-        # Handle initial request with duid
-        if "duid" in data:
-            device_uid = data["duid"]
-            self.group_name = f"device_{device_uid}" # Match the name in mqtt_consumer.py
-
-            # ✅ CRITICAL: Join the group so you can hear the MQTT broadcasts
-            await self.channel_layer.group_add(
-                self.group_name,
-                self.channel_name
-            )
-            
-            print(f"📡 Socket joined group: {self.group_name}")
-            
-            # Send confirmation back to client
-            await self.send(json.dumps({"ok": True}))
-            
-            try:
-                from devices.models import Device
-                self.device = await asyncio.to_thread(
-                    Device.objects.get, device_uid=device_uid
-                )
-            except Exception:
-                await self.send(json.dumps({"error": "Device not found"}))
-
-        # Handle interval update
-        if "interval" in data:
-            try:
-                self.interval = int(data["interval"])
-            except ValueError:
-                self.interval = self.DEFAULT_INTERVAL
-
-            if self.task:
-                self.task.cancel()
-            self.task = asyncio.create_task(self.stream_data())
-
-        # Handle terminate request
-        if data.get("terminate"):
-            if self.task:
-                self.task.cancel()
-            await self.send(json.dumps({"status": "terminated"}))
-            await self.close()
-
-    async def stream_data(self):
+        """Processes dynamic incoming commands sent down from user interactive maps."""
         try:
-            while True:
-                if self.device:
-                    from telemetry.models import TelemetryRecord
-                    latest = await asyncio.to_thread(
-                        lambda: TelemetryRecord.objects.filter(
-                            device=self.device
-                        ).order_by("-created_at").first()
-                    )
-                    if latest:
-                        # Corrected mapping to match your models.py
-                        payload = {
-                            "id": latest.id,
-                            "duid": self.device.device_uid,
-                            "ts": latest.created_at.isoformat(),
-                            "hr": latest.avg_heart_rate,
-                            "spo2": latest.avg_spo2,
-                            "amb_t": latest.avg_ambient_temp,
-                            "obj_t": latest.avg_object_temp,
-                            "ax": latest.accel_x,
-                            "ay": latest.accel_y,
-                            "az": latest.accel_z,
-                            "motion": latest.motion_detected,
-                            "light": latest.light_level,
-                            "batt_v": latest.battery_voltage,
-                            "batt_p": latest.battery_percentage,
-                            "lat": latest.latitude,
-                            "lon": latest.longitude,
-                            "dht_t": latest.temp_dht22,
-                            "hum": latest.humidity,
-                            "hi": latest.heat_index,
-                        }
-                        await self.send(json.dumps({"telemetry": payload}))
+            data = json.loads(text_data)
+            print(f"🕹️ Command intercept from map console: {data}")
+        except Exception as e:
+            print(f"⚠️ Failed to parse incoming socket frame: {str(e)}")
+
+    async def stream_historical_fallback(self):
+        """Periodically streams the absolute latest data point if MQTT stream pauses."""
+        from telemetry.models import TelemetryRecord
+        
+        try:
+            while self.keep_running:
+                # Resolve the lazy query safely inside an async context thread wrapper
+                latest = await sync_to_async(
+                    lambda: TelemetryRecord.objects.filter(device__device_uid=self.device_uid).order_by('-created_at').first()
+                )()
+
+                if latest and latest.location:
+                    payload = {
+                        "device_uid": self.device_uid,
+                        "timestamp": latest.created_at.isoformat(),
+                        "avg_heart_rate": latest.avg_heart_rate,
+                        "avg_spo2": latest.avg_spo2,
+                        "avg_object_temp": latest.avg_object_temp,
+                        "motion_detected": latest.motion_detected,
+                        # FIXED: Decodes native geometric primitives cleanly without attribute crashes
+                        "latitude": latest.location.y, 
+                        "longitude": latest.location.x,
+                        "battery_percentage": latest.battery_percentage,
+                        "humidity": latest.humidity,
+                        "is_emergency": latest.is_emergency
+                    }
+                    await self.send(json.dumps({"telemetry": payload}))
                 
-                await asyncio.sleep(self.interval)
+                await asyncio.sleep(self.DEFAULT_INTERVAL)
         except asyncio.CancelledError:
             pass
 
-    # This handles the REAL-TIME push from your mqtt_worker
     async def telemetry_message(self, event):
-        # We wrap it in a 'telemetry' key so the frontend 
-        # only has to listen for one type of message
+        """Intercepts immediate real-time multicast frames broadcast by mqtt_worker."""
         await self.send(json.dumps({"telemetry": event["data"]}))

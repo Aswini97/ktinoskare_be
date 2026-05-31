@@ -1,13 +1,25 @@
 from rest_framework import serializers
 from .models import TelemetryRecord
 
-# Use this for raw history logs
 class TelemetryRecordSerializer(serializers.ModelSerializer):
+    """
+    Production-optimized serializer converting PostGIS binary geometry 
+    primitives seamlessly into standard frontend JSON latitude/longitude parameters.
+    """
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    device_uid = serializers.CharField(source='device.device_uid', read_only=True)
+
     class Meta:
         model = TelemetryRecord
-        fields = "__all__"
+        exclude = ['location'] 
 
-# Specialized serializers for aggregated dashboard data
+    def get_latitude(self, obj):
+        return obj.location.y if obj.location else None
+
+    def get_longitude(self, obj):
+        return obj.location.x if obj.location else None
+
 class HeartRateStatSerializer(serializers.Serializer):
     avg_heart_rate = serializers.FloatField()
     min_heart_rate = serializers.FloatField()
