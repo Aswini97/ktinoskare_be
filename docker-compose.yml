@@ -1,10 +1,11 @@
 version: '3.8'
 
 services:
-  # 1. Reverse Proxy Gateway
+  # 1. Reverse Proxy Gateway (Nginx Router)
   nginx:
     image: nginx:latest
     container_name: nginx
+    restart: always
     ports:
       - "80:80"
       - "443:443"
@@ -13,9 +14,17 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - web
-    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 80M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 2. Centralized Spatial-Temporal Database Engine
+  # 2. Centralized Spatial-Temporal Database Engine (PostgreSQL + PostGIS + TimescaleDB)
   db:
     image: timescale/timescaledb-ha:pg15-oss
     container_name: spatial_db
@@ -28,8 +37,17 @@ services:
       - POSTGRES_PASSWORD=your_secure_password
     ports:
       - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 600M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 3. Enterprise Message Broker Ingestion Layer
+  # 3. Enterprise Message Broker Ingestion Layer (EMQX Broker)
   mqtt:
     image: emqx/emqx:5.7.0
     container_name: emqx_broker
@@ -40,45 +58,70 @@ services:
       - "8883:8883"
       - "18083:18083"
     volumes:
-      - emqx_data_vol:/opt/emqx/data
-    healthcheck:
-      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 4. Asynchronous Ingestion Telemetry Worker
+  # 4. Asynchronous Background Ingestion MQTT Worker
   mqtt_worker:
     build: .
     container_name: mqtt_worker
-    volumes:
-      - .:/app
-    command: python telemetry/mqtt_consumer.py
     restart: always
+    command: python telemetry/mqtt_consumer.py
     depends_on:
-      db:
-        condition: service_started
-      mqtt:
-        condition: service_healthy
+      - db
+      - redis
+      - mqtt
     environment:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/ktinoscare_db
-      - DJANGO_SECRET_KEY=django-insecure-your-hardcoded-fallback-secret-key-here
-      - DEBUG=True
-      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=ktinoscare.settings
       - MQTT_BROKER_HOST=mqtt
       - MQTT_BROKER_PORT=1883
+      - MQTT_TELEMETRY_TOPIC=ktinoscare/device/+/telemetry
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 5. Core Django REST Application Server (with Hot-Reloading)
+  # 5. Distributed Cache / Channels Backend (Redis Conveyor Belt)
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 6. Core Django Server Base (Daphne Application Server)
   web:
     build: .
-    container_name: ktinoscare_web_app
+    container_name: ktinoscare_api
     restart: always
-    command: >
-      sh -c "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done &&
-            python manage.py migrate &&
-            python manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/app
+    command: daphne -b 0.0.0.0 -p 8000 ktinoscare.asgi:application
+    ports:
+      - "8000:8000"
     depends_on:
       - db
       - redis
@@ -97,8 +140,17 @@ services:
       - AWS_ACCESS_KEY_ID=mock_local_key
       - AWS_SECRET_ACCESS_KEY=mock_local_secret
       - AWS_STORAGE_BUCKET_NAME=ktinoscare-telemetry-bucket
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 6. Database Graphical Administration Console
+  # 7. Database Graphical Administration Console
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: pgadmin
@@ -106,22 +158,21 @@ services:
     ports:
       - "5050:80"
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=your_pgadmin_password
+      - PGADMIN_DEFAULT_EMAIL=admin@ktinoscare.com
+      - PGADMIN_DEFAULT_PASSWORD=your_secure_password
     depends_on:
       - db
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-
-  # 7. Asynchronous Caching & Redis Task Broker
-  redis:
-    image: redis:6-alpine
-    container_name: redis
-    restart: always
-    ports:
-      - "16379:6379"
+    deploy:
+      resources:
+        limits:
+          memory: 120M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
-  emqx_data_vol: 
-  pgadmin_data:
+  emqx_data:
+  emqx_log:
