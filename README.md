@@ -17,8 +17,6 @@ Ensure your local workstation has the following base engine configurations insta
 
 Follow this terminal command workflow sequence exactly to initialize the workspace:
 
-## Open AI API Key
-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
 
 ### 1. Clone & Initialize the Environment Variables
 
