@@ -16,7 +16,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_DB=cattle_db
+      - POSTGRES_DB=ktinoscare_db
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=your_secure_password
 
@@ -39,7 +39,7 @@ services:
       - db
       - mqtt
     environment:
-      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/ktinoscare_db
       - PYTHONUNBUFFERED=1
 
   web:
@@ -56,7 +56,8 @@ services:
       - mqtt
       - redis
     environment:
-      - DATABASE_URL=postgres://admin:your_secure_password@db:5432/cattle_db
+      - DATABASE_URL=${DATABASE_URL:-postgres://admin:your_secure_password@db:5432/ktinoscare_db}
+      - DJANGO_CSRF_TRUSTED_ORIGINS=${DJANGO_CSRF_TRUSTED_ORIGINS:-}
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
       - DJANGO_SETTINGS_MODULE=ktinoskare.settings

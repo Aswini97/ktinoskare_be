@@ -217,7 +217,7 @@ docker-compose logs mqtt_worker --tail=20
 **Device not found error:**
 ```bash
 # Check device UID in database
-docker-compose exec db psql -U admin -d cattle_db -c "SELECT device_uid FROM devices_device;"
+docker-compose exec db psql -U admin -d ktinoscare_db -c "SELECT device_uid FROM devices_device;"
 ```
 
 ### Full End-to-End Test

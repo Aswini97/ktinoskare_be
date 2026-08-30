@@ -29,18 +29,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://d3dhvkckoyx2k8.cloudfront.net",
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://13.127.11.71",
-    "https://d3dhvkckoyx2k8.cloudfront.net"
-]
-
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",
@@ -49,6 +37,29 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://localhost:5173",
+#     "https://d3dhvkckoyx2k8.cloudfront.net",
+# ]
+
+# CSRF_TRUSTED_ORIGINS = [
+#     "https://43.204.228.66",
+#     "https://d3dhvkckoyx2k8.cloudfront.net"
+# ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1",
+    "https://d3dhvkckoyx2k8.cloudfront.net",
+]
+
+extra_csrf = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "")
+if extra_csrf:
+    CSRF_TRUSTED_ORIGINS.extend([url.strip() for url in extra_csrf.split(",") if url.strip()])
 
 # Application definition
 
@@ -115,7 +126,7 @@ WSGI_APPLICATION = 'ktinoskare.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'postgres://admin:your_secure_password@db:5432/cattle_db')
+        default=os.environ.get('DATABASE_URL', 'postgres://admin:your_secure_password@db:5432/ktinoscare_db')
     )
 }
 
