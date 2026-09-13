@@ -13,14 +13,56 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def add_library_dir_to_path(library_path):
+    if os.name == "nt" and library_path:
+        library_dir = str(Path(library_path).parent)
+        os.environ["PATH"] = f"{library_dir}{os.pathsep}{os.environ.get('PATH', '')}"
+
+
+def find_windows_gis_library(pattern):
+    if os.name != "nt":
+        return None
+
+    for bin_dir in [Path(r"C:\OSGeo4W\bin"), Path(r"C:\OSGeo4W64\bin")]:
+        if bin_dir.exists():
+            for candidate in sorted(bin_dir.glob(pattern), reverse=True):
+                add_library_dir_to_path(candidate)
+                return str(candidate)
+    return None
+
+
+def configure_windows_gdal_library():
+    configured_path = os.getenv("GDAL_LIBRARY_PATH")
+    if configured_path:
+        add_library_dir_to_path(configured_path)
+        return configured_path
+    return find_windows_gis_library("gdal*.dll")
+
+
+def configure_windows_geos_library():
+    configured_path = os.getenv("GEOS_LIBRARY_PATH")
+    if configured_path:
+        add_library_dir_to_path(configured_path)
+        return configured_path
+    for pattern in ["geos_c.dll", "libgeos_c*.dll"]:
+        candidate = find_windows_gis_library(pattern)
+        if candidate:
+            return str(candidate)
+    return None
+
+
+GDAL_LIBRARY_PATH = configure_windows_gdal_library()
+GEOS_LIBRARY_PATH = configure_windows_geos_library()
+
+
 def env_bool(name, default=False):
     value = os.getenv(name)
     if value is None:
         return default
     normalized = value.strip().lower()
-    if normalized in {"1", "true", "yes", "on"}:
+    if normalized in {"1", "true", "yes", "on", "debug", "development", "dev"}:
         return True
-    if normalized in {"0", "false", "no", "off"}:
+    if normalized in {"0", "false", "no", "off", "release", "production", "prod"}:
         return False
     raise ImproperlyConfigured(f'{name} must be a boolean value.')
 

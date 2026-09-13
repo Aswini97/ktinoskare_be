@@ -1,0 +1,11 @@
+{
+  "species": [
+    { "name": "Horse" },
+    { "name": "Rabbit" }
+  ],
+  "breeds": [
+    { "name": "Thoroughbred", "species": "Horse" },
+    { "name": "Arabian", "species_name": "Horse" },
+    { "name": "New Zealand White", "species": "Rabbit" }
+  ]
+}

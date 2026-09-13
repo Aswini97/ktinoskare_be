@@ -10,6 +10,11 @@ Ensure your local workstation has the following base engine configurations insta
 
 * **Docker Desktop** (with Docker Compose v2.0+)
 * **Python 3.12** (for local shell validation loops)
+* **OSGeo4W** (required only when running Django GIS commands from a Windows virtual environment)
+
+```powershell
+winget install OSGeo.OSGeo4W
+```
 
 ---
 
@@ -31,6 +36,19 @@ echo DJANGO_SECRET_KEY="django-insecure-your-hardcoded-fallback-secret-key-here"
 echo DEBUG=True >> .env
 
 ```
+
+### Windows local Django commands
+
+The Docker image already installs GDAL, GEOS, and PostgreSQL client headers. If you run Django commands directly from a Windows virtual environment, install native GIS libraries first:
+
+```powershell
+winget install OSGeo.OSGeo4W
+$env:GDAL_LIBRARY_PATH = "C:\OSGeo4W\bin\gdal311.dll"
+$env:PATH = "C:\OSGeo4W\bin;$env:PATH"
+python manage.py makemigrations
+```
+
+If your OSGeo4W install contains a different GDAL DLL, use the matching file name from `C:\OSGeo4W\bin`, such as `gdal310.dll`, `gdal309.dll`, or `gdal308.dll`.
 
 ### 2. Launch Container Infrastructure Stack
 
