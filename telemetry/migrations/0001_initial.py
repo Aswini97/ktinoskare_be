@@ -14,6 +14,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            sql=[
+                "CREATE EXTENSION IF NOT EXISTS postgis;",
+                "CREATE EXTENSION IF NOT EXISTS timescaledb;",
+            ],
+            reverse_sql=[
+                "DROP EXTENSION IF EXISTS timescaledb;",
+                "DROP EXTENSION IF EXISTS postgis;",
+            ],
+        ),
         migrations.CreateModel(
             name='TelemetryRecord',
             fields=[
