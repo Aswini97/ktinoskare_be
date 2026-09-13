@@ -24,7 +24,7 @@ services:
 
   # 2. Centralized Spatial-Temporal Database Engine (PostgreSQL + PostGIS + TimescaleDB)
   db:
-    image: timescale/timescaledb-ha:pg15-oss
+    image: timescale/timescaledb-ha:pg15
     container_name: spatial_db
     restart: always
     volumes:

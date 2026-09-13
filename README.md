@@ -83,6 +83,31 @@ docker-compose exec web python manage.py migrate
 
 ```
 
+### TimescaleDB shared library mismatch recovery
+
+If migration fails with an error like:
+
+```text
+could not access file "$libdir/timescaledb-tsl-2.28.3": No such file or directory
+```
+
+the existing PostgreSQL volume was initialized with TimescaleDB metadata that expects the TSL-enabled library, but the running database image does not include it. Keep the DB volume and restart with the pinned TSL-enabled image from `docker-compose.yml`:
+
+```bash
+docker compose pull db
+docker compose up -d db
+docker compose exec db psql -U admin -d ktinoscare_db -c "ALTER EXTENSION timescaledb UPDATE;"
+docker compose exec web python manage.py migrate
+```
+
+For a disposable development database only, you can instead recreate the volume:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+docker compose exec web python manage.py migrate
+```
+
 ### 🔍 Local Port Reference Layout
 
 To debug or monitor local transactions directly on your workbench, access these interface routes:
