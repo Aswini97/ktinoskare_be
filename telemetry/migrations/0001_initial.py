@@ -66,7 +66,37 @@ class Migration(migrations.Migration):
                 # 2. Bind composite key (id + partitioning time column axis)
                 "ALTER TABLE telemetry_telemetryrecord ADD PRIMARY KEY (id, created_at);",
                 # 3. Securely turn the table into an optimized TimescaleDB hypertable
-                "SELECT create_hypertable('telemetry_telemetryrecord', 'created_at', if_not_exists => TRUE);"
+                """
+                DO $$
+                DECLARE
+                    timescaledb_schema text;
+                BEGIN
+                    SELECT n.nspname
+                    INTO timescaledb_schema
+                    FROM pg_extension e
+                    JOIN pg_namespace n ON n.oid = e.extnamespace
+                    WHERE e.extname = 'timescaledb';
+
+                    IF timescaledb_schema IS NULL THEN
+                        RAISE EXCEPTION 'TimescaleDB extension is not installed in this database.';
+                    END IF;
+
+                    IF to_regprocedure(format('%I.by_range(name)', timescaledb_schema)) IS NOT NULL THEN
+                        EXECUTE format(
+                            'SELECT %I.create_hypertable($1::regclass, %I.by_range($2::name), if_not_exists => TRUE)',
+                            timescaledb_schema,
+                            timescaledb_schema
+                        )
+                        USING 'telemetry_telemetryrecord', 'created_at';
+                    ELSE
+                        EXECUTE format(
+                            'SELECT %I.create_hypertable($1::regclass, $2::name, if_not_exists => TRUE)',
+                            timescaledb_schema
+                        )
+                        USING 'telemetry_telemetryrecord', 'created_at';
+                    END IF;
+                END $$;
+                """
             ],
             reverse_sql="-- Cannot reverse cleanly"
         ),
