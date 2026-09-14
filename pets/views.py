@@ -45,7 +45,7 @@ class PetViewSet(viewsets.ModelViewSet):
         return Pet.objects.filter(
             owner=owner_id, 
             is_deleted=False
-        ).select_related('device', 'breed_id', 'species_id')
+        ).select_related('device', 'breed', 'species')
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -117,7 +117,7 @@ class PetBreedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Exclude soft-deleted breeds
-        queryset = PetBreed.objects.filter(is_deleted=False).select_related('species_id').order_by('name')
+        queryset = PetBreed.objects.filter(is_deleted=False).select_related('species').order_by('name')
         species_id = self.request.query_params.get('species_id')
         
         if species_id:
