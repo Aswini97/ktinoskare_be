@@ -55,6 +55,9 @@ services:
     volumes:
       - emqx_data:/opt/emqx/data
       - emqx_log:/opt/emqx/log
+    environment:
+      - EMQX_SYS__SYS_MON__OS_MEM_HIGH_WATERMARK=85%
+      - EMQX_SYS__SYS_MON__OS_MEM_LOW_WATERMARK=75%
     deploy:
       resources:
         limits:
