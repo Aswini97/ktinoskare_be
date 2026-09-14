@@ -106,6 +106,7 @@ For a disposable development database only, you can instead recreate the volume:
 docker compose down -v
 docker compose up -d --build
 docker compose exec web python manage.py migrate
+docker compose up -d --build && docker image prune -f
 ```
 
 ### 🔍 Local Port Reference Layout
