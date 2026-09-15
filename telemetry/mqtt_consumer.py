@@ -112,6 +112,10 @@ def on_message(client, userdata, msg):
         # CRITICAL: Point constructor explicitly mandates positional layout order -> Point(longitude, latitude)
         spatial_tracking_point = Point(lon_val, lat_val, srid=4326)
 
+        # If no physical DHT22 is connected, backfill ambient metrics using MLX90614 ambient temp
+        fallback_temp = dht_t if dht_t is not None else avg_amb_t
+        fallback_heat_index = dht_hi if dht_hi is not None else avg_amb_t
+
         # Map to TimescaleDB target structure template model
         record = TelemetryRecord(
             device=device_instance,
@@ -134,9 +138,9 @@ def on_message(client, userdata, msg):
             battery_voltage=batt_v,
             battery_percentage=batt_p,
             location=spatial_tracking_point, # Pushes verified spatial objects block natively
-            temp_dht22=dht_t,
+            temp_dht22=fallback_temp,
             humidity=dht_h,
-            heat_index=dht_hi,
+            heat_index=fallback_heat_index,
             created_at=packet_time
         )
         record.save()
