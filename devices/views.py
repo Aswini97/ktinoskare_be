@@ -1,5 +1,5 @@
 import json
-import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
 from django.conf import settings
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -11,7 +11,7 @@ from rest_framework import serializers
 from .models import Device
 from .serializers import DeviceSerializer
 
-# 1. Custom pagination class for Devices
+
 class DevicePagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -24,6 +24,7 @@ class DevicePagination(PageNumberPagination):
             "previous": self.get_previous_link(),
             "results": data
         })
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -41,6 +42,7 @@ class DevicePagination(PageNumberPagination):
     destroy=extend_schema(tags=["Devices"], parameters=[OpenApiParameter("user_id", type=int, required=True)]),
     create=extend_schema(tags=["Devices"])
 )
+
 class DeviceViewSet(viewsets.ModelViewSet):
     serializer_class = DeviceSerializer
     permission_classes = [permissions.AllowAny]
@@ -50,8 +52,8 @@ class DeviceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user_id = self.request.query_params.get('user_id')
         
-        # When triggering detail actions (like OTA) where user_id param may not be passed
-        if self.action in ['ota', 'retrieve', 'destroy', 'update', 'partial_update'] and not user_id:
+        # Whitelist custom action endpoints and detail routes when user_id query param is not passed
+        if self.action in ['ota', 'set_interval', 'retrieve', 'destroy', 'update', 'partial_update'] and not user_id:
             return Device.objects.all()
 
         if not user_id:
@@ -101,7 +103,6 @@ class DeviceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Match the JSON contract expected by the ESP32 firmware
         payload = json.dumps({
             "action": "ota_update",
             "version": target_version,
@@ -109,14 +110,18 @@ class DeviceViewSet(viewsets.ModelViewSet):
         })
 
         topic = f"ktinoscare/device/{device.device_uid}/cmd"
+        broker_host = getattr(settings, "MQTT_BROKER_HOST", "mqtt")
+        broker_port = int(getattr(settings, "MQTT_BROKER_PORT", 1883))
 
         try:
-            client = mqtt.Client()
-            # In Docker compose, 'emqx' is the broker service hostname
-            broker_host = getattr(settings, "MQTT_BROKER_HOST", "emqx")
-            client.connect(broker_host, 1883, 60)
-            client.publish(topic, payload, qos=1)
-            client.disconnect()
+            publish.single(
+                topic=topic,
+                payload=payload,
+                hostname=broker_host,
+                port=broker_port,
+                qos=1,
+                retain=False
+            )
 
             return Response({
                 "status": "success",
@@ -128,3 +133,72 @@ class DeviceViewSet(viewsets.ModelViewSet):
                 {"error": f"Failed to deliver command to broker: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @extend_schema(
+        tags=["Devices"],
+        description="Dynamically adjust telemetry transmission interval on collar via MQTT.",
+        request=inline_serializer(
+            name="SetIntervalRequest",
+            fields={"interval_seconds": serializers.IntegerField(default=30)}
+        ),
+        responses={200: inline_serializer(
+            name="SetIntervalResponse",
+            fields={"message": serializers.CharField()}
+        )}
+    )
+    @action(detail=True, methods=['post'], url_path='interval')
+    def set_interval(self, request, device_uid=None):
+        device = self.get_object()
+        raw_interval = request.data.get('interval_seconds')
+
+        if raw_interval is None:
+            return Response(
+                {"status": "failure", "message": "Field 'interval_seconds' is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            interval_seconds = int(raw_interval)
+            if not (3 <= interval_seconds <= 3600):
+                raise ValueError
+        except (ValueError, TypeError):
+            return Response(
+                {
+                    "status": "failure",
+                    "message": "interval_seconds must be an integer between 3 and 3600 (1 hour)."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        cmd_payload = {
+            "action": "set_interval",
+            "interval_seconds": interval_seconds
+        }
+        topic = f"ktinoscare/device/{device.device_uid}/cmd"
+
+        broker_host = getattr(settings, 'MQTT_BROKER_HOST', 'mqtt')
+        broker_port = int(getattr(settings, 'MQTT_BROKER_PORT', 1883))
+
+        try:
+            publish.single(
+                topic=topic,
+                payload=json.dumps(cmd_payload),
+                hostname=broker_host,
+                port=broker_port,
+                qos=1,
+                retain=False
+            )
+        except Exception as e:
+            return Response(
+                {"status": "failure", "message": f"Failed to publish MQTT command: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(
+            {
+                "status": "success",
+                "message": f"Interval set to {interval_seconds}s for device {device.device_uid}",
+                "payload": cmd_payload
+            },
+            status=status.HTTP_200_OK
+        )
