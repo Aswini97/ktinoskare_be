@@ -3,11 +3,16 @@ import sys
 import math
 import random
 from datetime import datetime, timedelta, timezone as dt_timezone
-import django
+from pathlib import Path
 
-# Setup Django runtime
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ktinoscare.settings")
+# Add project root directory (/app) to sys.path regardless of script location
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+# Matches the exact configuration module in manage.py
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ktinoskare.settings")
+
+import django
 django.setup()
 
 from django.contrib.gis.geos import Point
