@@ -1,25 +1,30 @@
 from rest_framework import serializers
-from .models import Device
+from .models import DeviceMaster, UserDeviceMapping
 
-class DeviceSerializer(serializers.ModelSerializer):
+class DeviceMasterSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Device
+        model = DeviceMaster
         fields = '__all__'
 
-class DeviceRegistrationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Device
-        fields = [
-            'device_uid',
-            'name',
-            'sim_iccid',
-            'firmware_version',
-            'hardware_version',
-            'checksum',
-            'is_active'
-        ]
 
-    def validate_device_uid(self, value):
-        if Device.objects.filter(device_uid=value).exists():
-            raise serializers.ValidationError(f"Device with UID '{value}' already exists.")
-        return value
+class UserDeviceMappingSerializer(serializers.ModelSerializer):
+    device_uid = serializers.SlugRelatedField(
+        slug_field='device_uid',
+        queryset=DeviceMaster.objects.all(),
+        source='device'
+    )
+    hardware_info = DeviceMasterSerializer(source='device', read_only=True)
+
+    class Meta:
+        model = UserDeviceMapping
+        fields = [
+            'id',
+            'user',
+            'device_uid',
+            'custom_name',
+            'battery_level',
+            'last_seen',
+            'is_active',
+            'assigned_at',
+            'hardware_info'
+        ]
