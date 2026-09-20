@@ -195,7 +195,7 @@ def generate_canine_telemetry():
                 max_object_temp=max_obj_t,
                 accel_x=accel_x,
                 accel_y=accel_y,
-                accel_z=acc_z,
+                accel_z=accel_z,
                 motion_detected=motion_detected,
                 light_level=light_lvl,
                 battery_voltage=batt_v,
