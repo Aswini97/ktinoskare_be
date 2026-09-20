@@ -29,6 +29,10 @@ class SpeciesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PetBreedSerializer(serializers.ModelSerializer):
+    species_id = serializers.PrimaryKeyRelatedField(
+        queryset=Species.objects.filter(is_deleted=False),
+        source='species'
+    )
     species_name = serializers.ReadOnlyField(source='species.name')
 
     class Meta:
