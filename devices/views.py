@@ -1,6 +1,7 @@
 import json
 import paho.mqtt.publish as publish
 from django.conf import settings
+from django.db import transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -9,7 +10,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import serializers
 
 from .models import Device
-from .serializers import DeviceSerializer
+from .serializers import *
 
 
 class DevicePagination(PageNumberPagination):
@@ -42,7 +43,6 @@ class DevicePagination(PageNumberPagination):
     destroy=extend_schema(tags=["Devices"], parameters=[OpenApiParameter("user_id", type=int, required=True)]),
     create=extend_schema(tags=["Devices"])
 )
-
 class DeviceViewSet(viewsets.ModelViewSet):
     serializer_class = DeviceSerializer
     permission_classes = [permissions.AllowAny]
@@ -53,7 +53,7 @@ class DeviceViewSet(viewsets.ModelViewSet):
         user_id = self.request.query_params.get('user_id')
         
         # Whitelist custom action endpoints and detail routes when user_id query param is not passed
-        if self.action in ['ota', 'set_interval', 'retrieve', 'destroy', 'update', 'partial_update'] and not user_id:
+        if self.action in ['ota', 'set_interval', 'bulk_register', 'retrieve', 'destroy', 'update', 'partial_update'] and not user_id:
             return Device.objects.all()
 
         if not user_id:
@@ -90,9 +90,6 @@ class DeviceViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'], url_path='ota')
     def ota(self, request, device_uid=None):
-        """
-        POST /api/v1/devices/<device_uid>/ota/
-        """
         device = self.get_object()
         target_version = request.data.get("version")
         firmware_url = request.data.get("url")
@@ -201,4 +198,49 @@ class DeviceViewSet(viewsets.ModelViewSet):
                 "payload": cmd_payload
             },
             status=status.HTTP_200_OK
+        )
+
+    @extend_schema(
+        tags=["Devices"],
+        description="Register one or multiple standalone hardware devices into master table without user or pet bindings.",
+        request=DeviceRegistrationSerializer(many=True),
+        responses={201: DeviceRegistrationSerializer(many=True)}
+    )
+    @action(detail=False, methods=['post'], url_path='bulk-register')
+    def bulk_register(self, request):
+        payload = request.data
+
+        # Normalize single dictionary into a list if one object was sent
+        is_many = isinstance(payload, list)
+        data = payload if is_many else [payload]
+
+        if not data:
+            return Response(
+                {"status": "failure", "message": "Payload cannot be empty."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = DeviceRegistrationSerializer(data=data, many=True)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "status": "failure",
+                    "errors": serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Bulk create instances inside an atomic block
+        device_instances = [Device(owner=None, **item) for item in serializer.validated_data]
+        
+        with transaction.atomic():
+            created_devices = Device.objects.bulk_create(device_instances)
+
+        return Response(
+            {
+                "status": "success",
+                "count": len(created_devices),
+                "devices": DeviceRegistrationSerializer(created_devices, many=True).data
+            },
+            status=status.HTTP_201_CREATED
         )
