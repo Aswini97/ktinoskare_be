@@ -15,6 +15,8 @@ class DeviceMaster(models.Model):
     def __str__(self):
         return f"{self.device_uid} - {self.name or 'Unnamed Master'}"
 
+Device = DeviceMaster
+
 
 class UserDeviceMapping(models.Model):
     """Mapping table: Links a registered physical device to an owner account."""
