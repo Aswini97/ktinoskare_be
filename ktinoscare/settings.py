@@ -177,7 +177,7 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'ktinoscare IoT Infrastructure Ingestion API Cluster',
+    'TITLE': 'Ktinoskare IoT Infrastructure Ingestion API Cluster',
     'DESCRIPTION': 'High-velocity time-series sensor telemetry collection engine specification details.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
