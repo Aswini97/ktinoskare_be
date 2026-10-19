@@ -44,7 +44,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # 3. Enterprise Message Broker Ingestion Layer (EMQX Broker)
+# 3. Enterprise Message Broker Ingestion Layer (EMQX Broker)
   mqtt:
     image: emqx/emqx:5.7.0
     container_name: emqx_broker
@@ -59,6 +59,12 @@ services:
     environment:
       - EMQX_SYS__SYS_MON__OS_MEM_HIGH_WATERMARK=85%
       - EMQX_SYS__SYS_MON__OS_MEM_LOW_WATERMARK=75%
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -76,9 +82,12 @@ services:
     restart: always
     command: python telemetry/mqtt_consumer.py
     depends_on:
-      - db
-      - redis
-      - mqtt
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+      mqtt:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgres://admin:your_secure_password@db:5432/ktinoscare_db
       - REDIS_URL=redis://redis:6379/0
