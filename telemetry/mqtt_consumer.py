@@ -19,6 +19,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ktinoscare.settings")
 django.setup()
 
 from telemetry.models import TelemetryRecord, Device
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+    force=True,
+)
 logger = logging.getLogger(__name__)
 
 
@@ -238,8 +244,19 @@ client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
 client.on_message = on_message
 
+import time
+
+connected = False
+while not connected:
+    try:
+        logger.info(f"Connecting to MQTT broker at {BROKER}:{PORT}...")
+        client.connect(BROKER, PORT, keepalive=60)
+        connected = True
+    except (ConnectionRefusedError, OSError) as e:
+        logger.warning(f"MQTT Broker not ready yet ({e}). Retrying in 5 seconds...")
+        time.sleep(5)
+
 try:
-    client.connect(BROKER, PORT, keepalive=60)
     client.loop_forever()
 except KeyboardInterrupt:
     logger.info("\n🛑 Ingestion Consumer Service Interrupted Manually. Shutting down gracefully.")
