@@ -210,6 +210,12 @@ def on_message(client, userdata, msg):
             created_at=packet_time,
         )
 
+        logger.info(
+            f"📥 Ingested telemetry #{record.id} for {extracted_device_uid} | "
+            f"HR: {avg_hr} bpm | SpO2: {avg_spo2}% | Batt: {batt_p}% | "
+            f"Coords: ({lat_val:.4f}, {lon_val:.4f})"
+        )
+
         # --- REAL-TIME WEBSOCKET BROADCAST ---
         channel_layer = get_channel_layer()
         if channel_layer:
